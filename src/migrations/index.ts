@@ -4,8 +4,21 @@ import pool from "../config/db";
 
 const MIGRATIONS_DIR = path.join(__dirname);
 
+const ensureMigrationsTable = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS migrations (
+      id SERIAL PRIMARY KEY,
+      filename VARCHAR(255) UNIQUE NOT NULL,
+      applied_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+};
+
 const runMigrations = async () => {
   try {
+    // Ensure the migrations table exists
+    await ensureMigrationsTable();
+    
     const files = fs
       .readdirSync(MIGRATIONS_DIR)
       .filter((file) => file.endsWith(".ts") && file !== "index.ts")
