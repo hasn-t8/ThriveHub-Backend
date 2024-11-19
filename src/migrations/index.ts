@@ -16,13 +16,24 @@ const ensureMigrationsTable = async () => {
 
 const runMigrations = async () => {
   try {
+    console.log("Running migrations...");
+    console.log(process.env.DB_HOST);
     // Ensure the migrations table exists
     await ensureMigrationsTable();
     
+    const isProd = process.env.NODE_ENV === 'production';
+
+    console.log('isProd:', isProd); 
+
     const files = fs
       .readdirSync(MIGRATIONS_DIR)
-      .filter((file) => file.endsWith(".ts") && file !== "index.ts")
+      .filter((file) => {
+        const extension = isProd ? '.js' : '.ts';
+        return file.endsWith(extension) && file !== 'index.ts' && file !== 'index.js';
+      })
       .sort();
+
+    console.log('Migrations to run:', files); // Debug log
 
     const appliedMigrations = await pool.query(
       "SELECT filename FROM migrations"

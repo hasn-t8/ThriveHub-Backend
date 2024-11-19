@@ -1,13 +1,25 @@
 version: "3.9"
 services:
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - postgres
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production 
+      DB_USER: your_user
+      DB_PASSWORD: your_password
+      DB_HOST: postgres
+      DB_NAME: your_database
+      DB_PORT: 5432
+    command: >
+      sh -c "
+      npm run migrate:prod &&
+      node dist/server.js"
 
   postgres:
     image: postgres:latest
@@ -20,4 +32,8 @@ services:
       POSTGRES_DB: your_database
     volumes:
       - ./docker_data/pg_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
