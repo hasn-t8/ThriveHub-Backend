@@ -1,9 +1,9 @@
 import { Router } from 'express';
+import usersRoute from './users.routes';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-    res.send('API is running!');
-});
+// Use individual route files
+router.use(usersRoute);
 
 export default router;
