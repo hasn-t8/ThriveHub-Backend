@@ -22,11 +22,11 @@ const swaggerDocs = swaggerJsdoc({
   definition: swaggerOptions,
   apis: ['./src/routes/**/*.ts'], // Path to your route files
 });
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 console.log('Swagger UI available at http://localhost:3000/api-docs');
 
 // Routes
-app.use('/api', routes);
+app.use('/api/v1', routes);
 
 export default app;
