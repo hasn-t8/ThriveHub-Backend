@@ -8,7 +8,8 @@ export const authorize = (requiredAction: string, requiredResource: string) => {
       const username = req.user?.username;
 
       if (!username) {
-        return res.status(401).json({ error: 'Unauthorized: No user information found' });
+        res.status(401).json({ error: 'Unauthorized: No user information found' });
+        return;
       }
 
       // Fetch user types
@@ -23,7 +24,8 @@ export const authorize = (requiredAction: string, requiredResource: string) => {
       const typeIds = userTypesResult.rows.map((type) => type.id);
 
       if (!typeIds.length) {
-        return res.status(403).json({ error: 'Forbidden: No user types found' });
+        res.status(403).json({ error: 'Forbidden: No user types found' });
+        return;
       }
 
       // Fetch policies for the user types
@@ -48,13 +50,15 @@ export const authorize = (requiredAction: string, requiredResource: string) => {
       });
 
       if (!isAuthorized) {
-        return res.status(403).json({ error: 'Forbidden: You do not have the required permissions' });
+        res.status(403).json({ error: 'Forbidden: You do not have the required permissions' });
+        return;
       }
 
       next();
     } catch (error) {
       console.error('Authorization error:', error);
       res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
   };
 };

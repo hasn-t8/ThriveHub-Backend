@@ -10,10 +10,7 @@ export const seedUserTypes = async (): Promise<void> => {
       // Type does not exist, insert it
       await pool.query('INSERT INTO user_types (type) VALUES ($1)', [type]);
       console.log(`Inserted user type: ${type}`);
-    } else {
-      console.log(`User type already exists: ${type}`);
     }
   }
-
-  console.log('User types seeded successfully.');
+  console.log('User types seeder ran successfully.');
 };
