@@ -21,3 +21,14 @@ export const assignUserType = async (userId: number, type: string): Promise<void
   await pool.query('INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2)', [userId, typeId]);
   console.log(`User assigned to type "${type}".`);
 };
+
+export const isUserTypesTableEmpty = async (): Promise<boolean> => {
+  try {
+    const result = await pool.query('SELECT COUNT(*) AS count FROM user_types');
+    const count = parseInt(result.rows[0].count, 10);
+    return count === 0;
+  } catch (error) {
+    console.error('Error checking user_types table:', error);
+    throw error;
+  }
+};

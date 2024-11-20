@@ -1,16 +1,10 @@
 import { findUserByEmail, createUser } from '../models/user';
-import { attachPolicyToType } from '../models/policy';
-import { addUserType, assignUserType } from '../models/user-types';
+import { attachPolicyToUser } from '../models/policy';
 
 export const seedAdmin = async (): Promise<void> => {
   const adminEmail = 'admin@example.com';
   const adminPassword = 'admin123'; // Replace with a hashed password in production
-  const adminType = 'admin'; // Define the admin user type
 
-  // Ensure the admin user type exists
-  await addUserType(adminType);
-
-  // Check if the admin user already exists
   const admin = await findUserByEmail(adminEmail);
 
   if (!admin) {
@@ -19,20 +13,17 @@ export const seedAdmin = async (): Promise<void> => {
     // Create admin user
     const adminId = await createUser(adminEmail, adminPassword);
 
-    // Assign the admin type to the user
-    await assignUserType(adminId, adminType);
-
-    // Attach policies to the admin type
+    // Attach admin policies
     const adminPolicy = {
-      id: 'admin-policy', // Unique ID for the policy
+      id: 'admin-policy', // Add a unique id for the policy
       effect: 'Allow',
       actions: ['*'], // Admin can perform all actions
       resources: ['*'], // Admin has access to all resources
     };
 
-    await attachPolicyToType(adminType, adminPolicy);
+    await attachPolicyToUser(adminId, adminPolicy);
 
-    console.log('Admin user created successfully with admin policies.');
+    console.log('Admin user created successfully.');
   } else {
     console.log('Admin user already exists.');
   }
