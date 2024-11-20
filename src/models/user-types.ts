@@ -1,22 +1,23 @@
 import pool from '../config/db';
 
-export const isUserTypesTableEmpty = async (): Promise<boolean> => {
-  try {
-    const result = await pool.query('SELECT COUNT(*) AS count FROM user_types');
-    const count = parseInt(result.rows[0].count, 10);
-    return count === 0;
-  } catch (error) {
-    console.error('Error checking user_types table:', error);
-    throw error;
+export const addUserType = async (type: string): Promise<void> => {
+  const result = await pool.query('SELECT id FROM user_types WHERE type = $1', [type]);
+
+  if (result.rowCount === 0) {
+    await pool.query('INSERT INTO user_types (type) VALUES ($1)', [type]);
+    console.log(`User type "${type}" added.`);
   }
 };
 
-export const addUserType = async (type: string): Promise<void> => {
-  try {
-    await pool.query('INSERT INTO user_types (type) VALUES ($1)', [type]);
-    console.log(`Inserted user type: ${type}`);
-  } catch (error) {
-    console.error(`Error adding user type "${type}":`, error);
-    throw error;
+export const assignUserType = async (userId: number, type: string): Promise<void> => {
+  const typeResult = await pool.query('SELECT id FROM user_types WHERE type = $1', [type]);
+
+  if (typeResult.rowCount === 0) {
+    throw new Error(`User type "${type}" does not exist.`);
   }
+
+  const typeId = typeResult.rows[0].id;
+
+  await pool.query('INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2)', [userId, typeId]);
+  console.log(`User assigned to type "${type}".`);
 };
