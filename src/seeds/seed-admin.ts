@@ -24,7 +24,5 @@ export const seedAdmin = async (): Promise<void> => {
     await attachPolicyToUser(adminUsername, adminPolicy);
 
     console.log('Admin user created successfully.');
-  } else {
-    console.log('Admin user already exists.');
   }
 };

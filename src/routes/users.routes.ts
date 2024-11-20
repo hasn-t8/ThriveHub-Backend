@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { AuthenticatedRequest } from '../types/authenticated-request';
+import { authenticate } from "../middleware/authenticate";
 
 const router = Router();
 
@@ -26,7 +28,7 @@ const router = Router();
  *                     description: The user's name.
  *                     example: John Doe
  */
-router.get("/users", (req, res) => {
+router.get("/users", authenticate,(req: AuthenticatedRequest, res) => {
   res.json([{ id: "1", name: "John Doe" }]);
 });
 
