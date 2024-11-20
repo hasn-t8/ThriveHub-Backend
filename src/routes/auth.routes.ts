@@ -1,66 +1,59 @@
-import { Router, Request, Response } from "express";
-import bcrypt from "bcrypt";
-import pool from "../config/db";
+import { Router, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { createUser, findUserByEmail, assignUserTypes } from '../models/user';
+import { check, validationResult } from 'express-validator';
 
 const router = Router();
 
-// Register a user with types
-router.post(
-  "/auth/register",
-  async (req: Request, res: Response): Promise<void> => {
-    const { password, email, types } = req.body;
+// Validation middleware for the "register" route
+const validateRegister = [
+  check('email').isEmail().withMessage('Email must be valid'),
+  check('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  check('types')
+    .isArray({ min: 1 })
+    .withMessage('Types must be an array with at least one element'),
+  check('types.*')
+    .isString()
+    .withMessage('Each type must be a string'),
+];
 
-    // Validate request body
-    if (!password || !email || !Array.isArray(types) || types.length === 0) {
-      res
-        .status(400)
-        .json({ error: "Bad Request: Missing required fields or invalid types" });
+// Register a user
+router.post(
+  '/auth/register',
+  validateRegister,
+  async (req: Request, res: Response): Promise<void> => {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
       return;
     }
 
+    const { email, password, types } = req.body;
+
     try {
       // Check if email already exists
-      const userExists = await pool.query(
-        "SELECT id FROM users WHERE email = $1",
-        [email]
-      );
-      if (userExists.rowCount && userExists.rowCount > 0) {
-        res.status(409).json({ error: "Conflict: Email already exists" });
+      const existingUser = await findUserByEmail(email);
+      if (existingUser) {
+        res.status(409).json({ error: 'Conflict: Email already exists' });
         return;
       }
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Insert the user
-      const userResult = await pool.query(
-        "INSERT INTO users (password, email, token_version, is_active) VALUES ($1, $2, 0, true) RETURNING id",
-        [hashedPassword, email]
-      );
+      // Create the user and get their ID
+      const userId = await createUser(email, hashedPassword);
 
-      const userId = userResult.rows[0].id;
+      // Assign user types
+      await assignUserTypes(userId, types);
 
-      // Map the user to types
-      for (const type of types) {
-        const typeResult = await pool.query(
-          "SELECT id FROM user_types WHERE type = $1",
-          [type]
-        );
-        if (typeResult.rowCount && typeResult.rowCount > 0) {
-          const typeId = typeResult.rows[0].id;
-          await pool.query(
-            "INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2)",
-            [userId, typeId]
-          );
-        } else {
-          console.error(`Type "${type}" does not exist.`);
-        }
-      }
-
-      res.status(201).json({ message: "User registered successfully" });
+      res.status(201).json({ message: 'User registered successfully' });
+      return;
     } catch (error) {
-      console.error("Error registering user:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+      console.error('Error registering user:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
     }
   }
 );

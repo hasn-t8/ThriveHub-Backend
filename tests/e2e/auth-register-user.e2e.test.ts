@@ -1,51 +1,47 @@
-import request from "supertest";
-import app from "../../src/app"; // Import your Express app
-import pool from "../../src/config/db"; // Import your database connection
+import request from 'supertest';
+import app from '../../src/app'; // Express app entry point
+import pool from '../../src/config/db'; // Database connection
 
-describe("User Registration E2E Test", () => {
+describe('User Registration E2E Test', () => {
   beforeAll(async () => {
+    // Clean up database and seed initial data for user types
+    await pool.query('TRUNCATE TABLE user_user_types, users RESTART IDENTITY CASCADE;');
+    await pool.query('TRUNCATE TABLE user_types RESTART IDENTITY CASCADE;');
+
+    // Seed user types
+    const userTypes = ['registered-user', 'business-owner', 'team-member'];
+    for (const type of userTypes) {
+      await pool.query('INSERT INTO user_types (type) VALUES ($1);', [type]);
+    }
   });
 
   afterAll(async () => {
-    // Delete user-user types associations for the specific test user
-    await pool.query(
-      `DELETE FROM user_user_types 
-     WHERE user_id IN (SELECT id FROM users WHERE email = 'john@example.com');`
-    );
-
-    // Delete the test user
-    await pool.query("DELETE FROM users WHERE email = $1;", [
-      "john@example.com",
-    ]);
-    // Close the database connection after the tests
+    // Close the database connection after tests
     await pool.end();
   });
 
-  it("should register a new user with multiple types", async () => {
+  it('should register a new user with multiple types', async () => {
     const userPayload = {
-      password: "password123",
-      email: "john@example.com",
-      types: ["registered-user", "business-owner"],
+      email: 'john.doe@example.com',
+      password: 'securepassword',
+      types: ['registered-user', 'business-owner'],
     };
 
     const response = await request(app)
-      .post("/api/v1/auth/register") // Updated API path
+      .post('/api/auth/register') // Route path
       .send(userPayload)
       .expect(201);
 
-    expect(response.body.message).toBe("User registered successfully");
+    expect(response.body.message).toBe('User registered successfully');
 
-    // Verify the user exists in the database
-    const userResult = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [userPayload.email]
-    );
+    // Verify user exists in the database
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [userPayload.email]);
     expect(userResult.rowCount).toBe(1);
 
     const user = userResult.rows[0];
     expect(user.email).toBe(userPayload.email);
 
-    // Verify the user types
+    // Verify the user types are correctly assigned
     const userTypesResult = await pool.query(
       `SELECT ut.type
        FROM users u
@@ -55,38 +51,51 @@ describe("User Registration E2E Test", () => {
       [userPayload.email]
     );
 
-    const userTypes = userTypesResult.rows.map((row) => row.type);
-    expect(userTypes).toEqual(expect.arrayContaining(userPayload.types));
+    const assignedTypes = userTypesResult.rows.map((row) => row.type);
+    expect(assignedTypes).toEqual(expect.arrayContaining(userPayload.types));
   });
 
-  it("should return 409 when registering with an existing email", async () => {
+  it('should return 409 when trying to register with an existing email', async () => {
     const userPayload = {
-      password: "newpassword123",
-      email: "john@example.com", // Same email as the previous test
-      types: ["team-member"],
+      email: 'john.doe@example.com', // Same email as the first test
+      password: 'anotherpassword',
+      types: ['team-member'],
     };
 
     const response = await request(app)
-      .post("/api/v1/auth/register") // Updated API path
+      .post('/api/auth/register')
       .send(userPayload)
       .expect(409);
 
-    expect(response.body.error).toBe("Conflict: Email already exists");
+    expect(response.body.error).toBe('Conflict: Email already exists');
   });
 
-  it("should return 400 when missing required fields", async () => {
-    const incompletePayload = {
-      password: "password123",
-      // Missing email and types
-    };
+  it('should return 400 for invalid input data', async () => {
+    const invalidPayloads = [
+      {
+        email: 'invalidemail', // Invalid email
+        password: 'password123',
+        types: ['registered-user'],
+      },
+      {
+        email: 'valid.email@example.com',
+        password: '123', // Password too short
+        types: ['business-owner'],
+      },
+      {
+        email: 'valid.email@example.com',
+        password: 'securepassword',
+        types: [], // Empty types array
+      },
+    ];
 
-    const response = await request(app)
-      .post("/api/v1/auth/register") // Updated API path
-      .send(incompletePayload)
-      .expect(400);
+    for (const payload of invalidPayloads) {
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send(payload)
+        .expect(400);
 
-    expect(response.body.error).toBe(
-      "Bad Request: Missing required fields or invalid types"
-    );
+      expect(response.body.errors).toBeDefined();
+    }
   });
 });
