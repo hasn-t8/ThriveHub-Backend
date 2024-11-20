@@ -6,11 +6,15 @@ export const up = async (pool: Pool) => {
       id SERIAL PRIMARY KEY,
       username VARCHAR(50) UNIQUE NOT NULL,
       password VARCHAR(255) NOT NULL,
-      role VARCHAR(50) NOT NULL
+      token_version INTEGER DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      email VARCHAR(255) NOT NULL
     );
   `);
+  console.log('Table "users" created successfully.');
 };
 
 export const down = async (pool: Pool) => {
   await pool.query(`DROP TABLE IF EXISTS users;`);
+  console.log('Table "users" dropped successfully.');
 };
