@@ -1,28 +1,30 @@
-import { findUserByUsername, createUser } from '../models/user';
+import { findUserByEmail, createUser } from '../models/user';
 import { attachPolicyToUser } from '../models/policy';
 
 export const seedAdmin = async (): Promise<void> => {
-  const adminUsername = 'admin';
+  const adminEmail = 'admin@example.com';
   const adminPassword = 'admin123'; // Replace with a hashed password in production
-  const adminRole = 'admin';
 
-  const admin = await findUserByUsername(adminUsername);
+  const admin = await findUserByEmail(adminEmail);
 
   if (!admin) {
     console.log('Admin user not found. Creating admin user...');
 
     // Create admin user
-    await createUser(adminUsername, adminPassword, adminRole);
+    await createUser(adminEmail, adminPassword);
 
     // Attach admin policies
     const adminPolicy = {
-      id: 'admin-policy',
+      id: 'admin-policy', // Add a unique id for the policy
       effect: 'Allow',
-      actions: ['*'],
-      resources: ['*'],
+      actions: ['*'], // Admin can perform all actions
+      resources: ['*'], // Admin has access to all resources
     };
-    await attachPolicyToUser(adminUsername, adminPolicy);
+
+    await attachPolicyToUser(adminEmail, adminPolicy);
 
     console.log('Admin user created successfully.');
+  } else {
+    console.log('Admin user already exists.');
   }
 };

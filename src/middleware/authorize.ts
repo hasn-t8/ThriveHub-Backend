@@ -5,9 +5,9 @@ import { AuthenticatedRequest } from '../types/authenticated-request';
 export const authorize = (requiredAction: string, requiredResource: string) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const username = req.user?.username;
+      const email = req.user?.email;
 
-      if (!username) {
+      if (!email) {
         res.status(401).json({ error: 'Unauthorized: No user information found' });
         return;
       }
@@ -18,8 +18,8 @@ export const authorize = (requiredAction: string, requiredResource: string) => {
          FROM users u
          JOIN user_user_types uut ON u.id = uut.user_id
          JOIN user_types ut ON uut.type_id = ut.id
-         WHERE u.username = $1`,
-        [username]
+         WHERE u.email = $1`,
+        [email]
       );
       const typeIds = userTypesResult.rows.map((type) => type.id);
 

@@ -10,7 +10,8 @@
     "build": "tsc",
     "migrate:up": "ts-node src/migrations/index.ts",
     "migrate:down": "ts-node src/migrations/index.ts rollback",
-    "migrate:prod": "node dist/migrations/index.js"
+    "migrate:prod": "node dist/migrations/index.js",
+    "seed": "ts-node src/scripts/run-seeders.ts"
   },
   "keywords": [],
   "author": "",

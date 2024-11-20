@@ -8,16 +8,10 @@ const router = Router();
 router.post(
   "/auth/register",
   async (req: Request, res: Response): Promise<void> => {
-    const { username, password, email, types } = req.body;
+    const { password, email, types } = req.body;
 
     // Validate request body
-    if (
-      !username ||
-      !password ||
-      !email ||
-      !Array.isArray(types) ||
-      types.length === 0
-    ) {
+    if (!password || !email || !Array.isArray(types) || types.length === 0) {
       res
         .status(400)
         .json({ error: "Bad Request: Missing required fields or invalid types" });
@@ -25,13 +19,13 @@ router.post(
     }
 
     try {
-      // Check if username or email already exists
+      // Check if email already exists
       const userExists = await pool.query(
-        "SELECT id FROM users WHERE username = $1 OR email = $2",
-        [username, email]
+        "SELECT id FROM users WHERE email = $1",
+        [email]
       );
       if (userExists.rowCount && userExists.rowCount > 0) {
-        res.status(409).json({ error: "Conflict: Username or email already exists" });
+        res.status(409).json({ error: "Conflict: Email already exists" });
         return;
       }
 
@@ -40,8 +34,8 @@ router.post(
 
       // Insert the user
       const userResult = await pool.query(
-        "INSERT INTO users (username, password, email, token_version, is_active) VALUES ($1, $2, $3, 0, true) RETURNING id",
-        [username, hashedPassword, email]
+        "INSERT INTO users (password, email, token_version, is_active) VALUES ($1, $2, 0, true) RETURNING id",
+        [hashedPassword, email]
       );
 
       const userId = userResult.rows[0].id;
@@ -58,6 +52,8 @@ router.post(
             "INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2)",
             [userId, typeId]
           );
+        } else {
+          console.error(`Type "${type}" does not exist.`);
         }
       }
 

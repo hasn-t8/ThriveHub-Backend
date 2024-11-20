@@ -4,7 +4,14 @@ import pool from '../../src/config/db'; // Import your database connection
 
 describe('User Registration E2E Test', () => {
   beforeAll(async () => {
+    // Clean up tables and seed user types
+    await pool.query('TRUNCATE TABLE user_user_types, users RESTART IDENTITY CASCADE;');
+    await pool.query('TRUNCATE TABLE user_types RESTART IDENTITY CASCADE;');
 
+    const userTypes = ['registered-user', 'business-owner', 'team-member'];
+    for (const type of userTypes) {
+      await pool.query('INSERT INTO user_types (type) VALUES ($1);', [type]);
+    }
   });
 
   afterAll(async () => {
@@ -14,7 +21,6 @@ describe('User Registration E2E Test', () => {
 
   it('should register a new user with multiple types', async () => {
     const userPayload = {
-      username: 'johndoe',
       password: 'password123',
       email: 'john@example.com',
       types: ['registered-user', 'business-owner'],
@@ -28,11 +34,10 @@ describe('User Registration E2E Test', () => {
     expect(response.body.message).toBe('User registered successfully');
 
     // Verify the user exists in the database
-    const userResult = await pool.query('SELECT * FROM users WHERE username = $1', [userPayload.username]);
+    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [userPayload.email]);
     expect(userResult.rowCount).toBe(1);
 
     const user = userResult.rows[0];
-    expect(user.username).toBe(userPayload.username);
     expect(user.email).toBe(userPayload.email);
 
     // Verify the user types
@@ -41,19 +46,18 @@ describe('User Registration E2E Test', () => {
        FROM users u
        JOIN user_user_types uut ON u.id = uut.user_id
        JOIN user_types ut ON uut.type_id = ut.id
-       WHERE u.username = $1`,
-      [userPayload.username]
+       WHERE u.email = $1`,
+      [userPayload.email]
     );
 
     const userTypes = userTypesResult.rows.map((row) => row.type);
     expect(userTypes).toEqual(expect.arrayContaining(userPayload.types));
   });
 
-  it('should return 409 when registering with an existing username', async () => {
+  it('should return 409 when registering with an existing email', async () => {
     const userPayload = {
-      username: 'johndoe', // Same username as the previous test
       password: 'newpassword123',
-      email: 'john.doe@example.com',
+      email: 'john@example.com', // Same email as the previous test
       types: ['team-member'],
     };
 
@@ -62,12 +66,11 @@ describe('User Registration E2E Test', () => {
       .send(userPayload)
       .expect(409);
 
-    expect(response.body.error).toBe('Conflict: Username or email already exists');
+    expect(response.body.error).toBe('Conflict: Email already exists');
   });
 
   it('should return 400 when missing required fields', async () => {
     const incompletePayload = {
-      username: 'janedoe',
       password: 'password123',
       // Missing email and types
     };
