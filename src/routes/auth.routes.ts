@@ -6,7 +6,7 @@ const router = Router();
 
 // Register a user with types
 router.post(
-  "/register",
+  "/auth/register",
   async (req: Request, res: Response): Promise<void> => {
     const { username, password, email, types } = req.body;
 
