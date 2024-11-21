@@ -31,31 +31,30 @@ router.post(
     const { email, code } = req.body;
 
     try {
-      // Find the user by email
       const user = await findUserByEmail(email);
       if (!user) {
         res.status(404).json({ error: "User not found" });
         return;
       }
 
-      // Check if the code matches
       const result = await pool.query(
         "SELECT code FROM user_verification WHERE user_id = $1",
         [user.id]
       );
 
-      if (result.rowCount === 0 || result.rows[0].code !== parseInt(code, 10)) {
+      if (result.rowCount === 0) {
+        res.status(404).json({ error: "Invalid verification code" });
+        return;
+      }
+
+      if (result.rows[0].code !== parseInt(code, 10)) {
         res.status(400).json({ error: "Invalid verification code" });
         return;
       }
 
-      // Activate the user account
       await activateUser(email);
 
-      // Remove the verification code (optional)
-      await pool.query("DELETE FROM user_verification WHERE user_id = $1", [
-        user.id,
-      ]);
+      await pool.query("DELETE FROM user_verification WHERE user_id = $1", [user.id]);
 
       res.status(200).json({ message: "Account verified successfully" });
     } catch (error) {
@@ -77,28 +76,28 @@ router.post(
     }
 
     const { email } = req.body;
-
+    console.log('--------->>>--------');
     try {
-      // Find the user by email
       const user = await findUserByEmail(email);
       if (!user) {
         res.status(404).json({ error: "User not found" });
         return;
       }
 
-      // Fetch the verification code from the database
       const result = await pool.query(
         "SELECT code FROM user_verification WHERE user_id = $1",
         [user.id]
       );
 
       if (result.rowCount === 0) {
-        console.log('Verification code not found ********');
-        
-        res.status(404).json({ error: "Verification code not found" });
+        res.status(404).json({ error: "Invalid verification code" });
         return;
       }
 
+      
+      
+      console.log('result.rows[0].code', result.rows[0].code);
+      
       res.status(200).json({ verificationCode: result.rows[0].code });
     } catch (error) {
       console.error("Error fetching verification code:", error);
@@ -106,5 +105,6 @@ router.post(
     }
   }
 );
+
 
 export default router;

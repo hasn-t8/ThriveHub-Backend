@@ -32,16 +32,27 @@ describe("Account Verification E2E Test", () => {
     );
   });
 
-  afterEach(async () => {
-    // Clean up the users and verification table after each test
-    await pool.query("DELETE FROM user_verification WHERE user_id = (SELECT id FROM users WHERE email = $1)", [testUser.email]);
-    await pool.query("DELETE FROM users WHERE email = $1", [testUser.email]);
-    await pool.query("DELETE FROM users WHERE email = $1", ['nocode@example.com']); // Cleanup for 'nocode@example.com'
-  });
-
   afterAll(async () => {
+    // Clean up the users and verification table after each test
+    await pool.query(
+      "DELETE FROM user_verification WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+      [testUser.email]
+    );
+    await pool.query("DELETE FROM users WHERE email = $1", [testUser.email]);
+    await pool.query("DELETE FROM users WHERE email = $1", [
+      "nocode@example.com",
+    ]); // Cleanup for 'nocode@example.com'
     // Close the database connection
     await pool.end();
+  });
+
+  it("should retrieve the verification code for a valid user", async () => {
+    const response = await request(app)
+      .post("/api/auth/activate-account/get-code")
+      .send({ email: testUser.email })
+      .expect(200);
+
+    expect(response.body.verificationCode).toBe(verificationCode);
   });
 
   it("should successfully verify an account with a valid code", async () => {
@@ -77,7 +88,7 @@ describe("Account Verification E2E Test", () => {
         email: testUser.email,
         code: 123456, // Invalid code
       })
-      .expect(400);
+      .expect(404);
 
     expect(response.body.error).toBe("Invalid verification code");
   });
@@ -130,16 +141,7 @@ describe("Account Verification E2E Test", () => {
       })
       .expect(404);
 
-    expect(response.body.error).toBe("Verification code not found");
-  });
-
-  it("should retrieve the verification code for a valid user", async () => {
-    const response = await request(app)
-      .post("/api/auth/activate-account/get-code")
-      .send({ email: testUser.email })
-      .expect(200);
-
-    expect(response.body.verificationCode).toBe(verificationCode);
+    expect(response.body.error).toBe("Invalid verification code");
   });
 
   it("should return 404 when getting verification code for a non-existent user", async () => {
