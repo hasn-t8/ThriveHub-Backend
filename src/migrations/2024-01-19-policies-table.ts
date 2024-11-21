@@ -11,8 +11,6 @@ export const up = async (pool: Pool) => {
       resources JSONB NOT NULL
     );
   `);
-
-  console.log('Table "policies" created successfully.');
 };
 
 export const down = async (pool: Pool) => {

@@ -8,7 +8,6 @@ export const up = async (pool: Pool) => {
       PRIMARY KEY (user_id, type_id)
     );
   `);
-  console.log('Table "user_user_types" created successfully.');
 };
 
 export const down = async (pool: Pool) => {

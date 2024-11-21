@@ -47,3 +47,16 @@ export const activateUser = async (email: string): Promise<void> => {
 export const deactivateUser = async (email: string): Promise<void> => {
   await pool.query('UPDATE users SET is_active = false WHERE email = $1', [email]);
 };
+
+// Save or update a verification code for a user
+export const saveVerificationCode = async (userId: number, code: number): Promise<void> => {
+  await pool.query(
+    `
+    INSERT INTO user_verification (user_id, code) 
+    VALUES ($1, $2) 
+    ON CONFLICT (user_id) 
+    DO UPDATE SET code = $2
+    `,
+    [userId, code]
+  );
+};

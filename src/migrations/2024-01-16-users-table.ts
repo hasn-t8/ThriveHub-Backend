@@ -10,7 +10,6 @@ export const up = async (pool: Pool) => {
       is_active BOOLEAN DEFAULT true
     );
   `);
-  console.log('Table "users" created successfully.');
 };
 
 export const down = async (pool: Pool) => {

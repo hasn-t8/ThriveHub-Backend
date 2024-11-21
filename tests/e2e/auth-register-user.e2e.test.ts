@@ -3,26 +3,25 @@ import app from '../../src/app'; // Express app entry point
 import pool from '../../src/config/db'; // Database connection
 
 describe('User Registration E2E Test', () => {
-  beforeAll(async () => {
-    // Clean up database and seed initial data for user types
-    await pool.query('TRUNCATE TABLE user_user_types, users RESTART IDENTITY CASCADE;');
-    await pool.query('TRUNCATE TABLE user_types RESTART IDENTITY CASCADE;');
+  const testUserEmail = 'john.doe@example.com';
 
-    // Seed user types
-    const userTypes = ['registered-user', 'business-owner', 'team-member'];
-    for (const type of userTypes) {
-      await pool.query('INSERT INTO user_types (type) VALUES ($1);', [type]);
-    }
+  beforeAll(async () => {
+    // Optional setup before tests run, if necessary
+  });
+
+  afterEach(async () => {
+    // Clean up the test user after each test
+    await pool.query('DELETE FROM users WHERE email = $1', [testUserEmail]);
   });
 
   afterAll(async () => {
-    // Close the database connection after tests
+    // Close the database connection after all tests
     await pool.end();
   });
 
   it('should register a new user with multiple types', async () => {
     const userPayload = {
-      email: 'john.doe@example.com',
+      email: testUserEmail,
       password: 'securepassword',
       types: ['registered-user', 'business-owner'],
     };
@@ -57,11 +56,21 @@ describe('User Registration E2E Test', () => {
 
   it('should return 409 when trying to register with an existing email', async () => {
     const userPayload = {
-      email: 'john.doe@example.com', // Same email as the first test
+      email: testUserEmail, // Same email as the first test
       password: 'anotherpassword',
       types: ['team-member'],
     };
 
+    // Register the user
+    await request(app)
+      .post('/api/auth/register')
+      .send({
+        email: testUserEmail,
+        password: 'securepassword',
+        types: ['registered-user'],
+      });
+
+    // Attempt to register with the same email
     const response = await request(app)
       .post('/api/auth/register')
       .send(userPayload)

@@ -7,8 +7,6 @@ export const up = async (pool: Pool) => {
       type VARCHAR(255) UNIQUE NOT NULL
     );
   `);
-
-  console.log('Table "user_types" created successfully.');
 };
 
 export const down = async (pool: Pool) => {

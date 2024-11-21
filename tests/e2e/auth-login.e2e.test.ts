@@ -9,10 +9,14 @@ const testUser = {
   types: ['registered-user', 'business-owner'],
 };
 
+const inactiveUser = {
+  email: 'inactiveuser@example.com',
+  password: 'inactivepassword123',
+};
+
 beforeAll(async () => {
-
+  // Insert active test user
   const hashedPassword = await bcrypt.hash(testUser.password, 10);
-
   await pool.query(
     'INSERT INTO users (email, password, is_active, token_version) VALUES ($1, $2, $3, $4)',
     [testUser.email, hashedPassword, true, 0]
@@ -20,7 +24,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await pool.query('DELETE FROM users WHERE email = $1', [testUser.email]);
+  // Cleanup test data
+  await pool.query('DELETE FROM users WHERE email = $1 OR email = $2', [testUser.email, inactiveUser.email]);
   await pool.end();
 });
 
@@ -72,20 +77,18 @@ describe('User Login E2E Test', () => {
   });
 
   it('should return 403 for inactive users', async () => {
-    // Create an inactive user
-    const inactiveUserEmail = 'inactiveuser@example.com';
-    const hashedPassword = await bcrypt.hash('inactivepassword123', 10);
-
+    // Insert inactive user
+    const hashedPassword = await bcrypt.hash(inactiveUser.password, 10);
     await pool.query(
       'INSERT INTO users (email, password, is_active, token_version) VALUES ($1, $2, $3, $4)',
-      [inactiveUserEmail, hashedPassword, false, 0]
+      [inactiveUser.email, hashedPassword, false, 0]
     );
 
     const response = await request(app)
       .post('/api/auth/login')
       .send({
-        email: inactiveUserEmail,
-        password: 'inactivepassword123',
+        email: inactiveUser.email,
+        password: inactiveUser.password,
       })
       .expect(403);
 
