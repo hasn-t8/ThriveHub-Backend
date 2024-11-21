@@ -76,7 +76,6 @@ router.post(
     }
 
     const { email } = req.body;
-    console.log('--------->>>--------');
     try {
       const user = await findUserByEmail(email);
       if (!user) {
@@ -94,8 +93,6 @@ router.post(
         return;
       }
 
-      
-      
       console.log('result.rows[0].code', result.rows[0].code);
       
       res.status(200).json({ verificationCode: result.rows[0].code });
