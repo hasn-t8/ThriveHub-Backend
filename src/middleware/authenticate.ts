@@ -71,6 +71,7 @@ export const verifyToken = async (
 ): Promise<void> => {
   const token = (req.headers as any).authorization?.split(" ")[1];
 
+
   if (!token) {
     res.status(401).json({ error: "Unauthorized: No token provided" });
     return;
@@ -83,8 +84,10 @@ export const verifyToken = async (
       tokenVersion: number;
     };
 
+    
     const { id, email, tokenVersion } = decoded;
 
+    console.log('token', token, email, tokenVersion);
     const result = await pool.query(
       "SELECT token_version FROM users WHERE id = $1",
       [id]

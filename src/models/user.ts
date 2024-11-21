@@ -8,13 +8,13 @@ export interface User {
   token_version: number;
 }
 
-// Find a user by email
+/** --------------------- Find User By Email --------------------- */
 export const findUserByEmail = async (email: string): Promise<User | null> => {
   const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   return result.rows[0] || null;
 };
 
-// Create a new user and return their ID
+/** --------------------- Create User --------------------- */
 export const createUser = async (email: string, password: string): Promise<number> => {
   const result = await pool.query(
     'INSERT INTO users (email, password, token_version, is_active) VALUES ($1, $2, 0, true) RETURNING id',
@@ -23,7 +23,7 @@ export const createUser = async (email: string, password: string): Promise<numbe
   return result.rows[0].id; // Return the new user's ID
 };
 
-// Assign user types to a user
+/** --------------------- Assign User Types --------------------- */
 export const assignUserTypes = async (userId: number, types: string[]): Promise<void> => {
   for (const type of types) {
     const typeResult = await pool.query('SELECT id FROM user_types WHERE type = $1', [type]);
@@ -38,17 +38,17 @@ export const assignUserTypes = async (userId: number, types: string[]): Promise<
   // console.log(`User ${userId} assigned to types: ${types.join(', ')}`);
 };
 
-// Activate a user
+/** --------------------- Account Activation --------------------- */
 export const activateUser = async (email: string): Promise<void> => {
   await pool.query('UPDATE users SET is_active = true WHERE email = $1', [email]);
 };
 
-// Deactivate a user
+/** --------------------- Account De-Activation --------------------- */
 export const deactivateUser = async (email: string): Promise<void> => {
   await pool.query('UPDATE users SET is_active = false WHERE email = $1', [email]);
 };
 
-// Save or update a verification code for a user
+/** --------------------- Account Verification --------------------- */
 export const saveVerificationCode = async (userId: number, code: number): Promise<void> => {
   await pool.query(
     `
@@ -61,6 +61,7 @@ export const saveVerificationCode = async (userId: number, code: number): Promis
   );
 };
 
+/** --------------------- Password Reset - save token --------------------- */
 export const saveResetToken = async (
   userId: number,
   resetToken: string
@@ -72,6 +73,7 @@ export const saveResetToken = async (
   );
 };
 
+/** --------------------- Change Password --------------------- */
 export const updatePassword = async (userId: number, hashedPassword: string): Promise<void> => {
   await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
 };

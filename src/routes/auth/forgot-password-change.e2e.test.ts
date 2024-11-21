@@ -1,6 +1,6 @@
 import request from 'supertest';
-import app from '../../../src/app'; // Your Express app
-import pool from '../../../src/config/db'; // Your database connection
+import app from '../../app'; // Your Express app
+import pool from '../../config/db'; // Your database connection
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
