@@ -2,7 +2,6 @@ import request from "supertest";
 import app from "../../src/app"; // Your Express app
 import pool from "../../src/config/db"; // Your database connection
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 
 describe("Forgot Password E2E Test", () => {
   const testUser = {

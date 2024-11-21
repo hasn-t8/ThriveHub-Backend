@@ -71,3 +71,7 @@ export const saveResetToken = async (
     [userId, resetToken]
   );
 };
+
+export const updatePassword = async (userId: number, hashedPassword: string): Promise<void> => {
+  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
+};
