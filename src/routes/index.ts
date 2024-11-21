@@ -5,6 +5,7 @@ import authLoginRoute from './auth/login.auth.routes';
 import authRegistrationRoute from './auth/registration.auth.routes';
 import verifyJwtTokenRoute from './auth/verify-jwt-token.auth.routes';
 import activateAccountRoute from './auth/activate-account.auth.routes';
+import logoutRoute from './auth/logout.auth.routes';
 
 // users routes
 import usersRoute from './users.routes';
@@ -19,5 +20,6 @@ router.use(authLoginRoute);
 router.use(authRegistrationRoute);
 router.use(verifyJwtTokenRoute);
 router.use(activateAccountRoute);
+router.use(logoutRoute);
 
 export default router;

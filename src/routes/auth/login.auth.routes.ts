@@ -4,7 +4,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { findUserByEmail } from "../../models/user";
 import { check, validationResult } from "express-validator";
-
 import { JWT_SECRET, JWT_EXPIRATION } from "../../config/auth";
 
 const router = Router();
