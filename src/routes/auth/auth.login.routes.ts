@@ -21,7 +21,7 @@ const loginLimiter = rateLimit({
   });
 
 router.post(
-  "/login",
+  "/auth/login",
   loginLimiter,
   validateLogin,
   async (req: Request, res: Response): Promise<void> => {
