@@ -1,7 +1,7 @@
 import pool from '../config/db';
 
 export interface User {
-  id: string;
+  id: number;
   email: string;
   password: string;
   is_active: boolean;
@@ -58,5 +58,16 @@ export const saveVerificationCode = async (userId: number, code: number): Promis
     DO UPDATE SET code = $2
     `,
     [userId, code]
+  );
+};
+
+export const saveResetToken = async (
+  userId: number,
+  resetToken: string
+): Promise<void> => {
+  await pool.query(
+    `INSERT INTO password_resets (user_id, token, created_at) VALUES ($1, $2, NOW())
+     ON CONFLICT (user_id) DO UPDATE SET token = $2, created_at = NOW()`,
+    [userId, resetToken]
   );
 };
