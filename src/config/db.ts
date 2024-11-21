@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-console.log("process.env.DB_HOST")
-console.log(process.env.DB_HOST)
+// console.log("process.env.DB_HOST")
+// console.log(process.env.DB_HOST)
 
 const pool = new Pool({
     user: process.env.DB_USER,

@@ -35,7 +35,7 @@ export const assignUserTypes = async (userId: number, types: string[]): Promise<
 
     await pool.query('INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2)', [userId, typeId]);
   }
-  console.log(`User ${userId} assigned to types: ${types.join(', ')}`);
+  // console.log(`User ${userId} assigned to types: ${types.join(', ')}`);
 };
 
 // Activate a user

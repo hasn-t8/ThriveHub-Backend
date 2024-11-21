@@ -11,17 +11,17 @@ const app: Application = express();
 // Middleware
 app.use(express.json());
 
-seedUserTypes().catch((err) => {
-  console.error("Error during userTypes seeding:", err);
-  process.exit(1);
-});
-// initializeApp();
+// seedUserTypes().catch((err) => {
+//   console.error("Error during userTypes seeding:", err);
+//   process.exit(1);
+// });
+// // initializeApp();
 
-// Run admin seed logic
-seedAdmin().catch((err) => {
-  console.error("Error during admin seeding:", err);
-  process.exit(1);
-});
+// // Run admin seed logic
+// seedAdmin().catch((err) => {
+//   console.error("Error during admin seeding:", err);
+//   process.exit(1);
+// });
 
 // Generate Swagger documentation and server UI
 const swaggerDocs = swaggerJsdoc({
@@ -30,7 +30,6 @@ const swaggerDocs = swaggerJsdoc({
 });
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-console.log("Swagger UI available at http://localhost:3000/api-docs");
 
 // Routes
 app.use("/api", routes);
