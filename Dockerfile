@@ -1,22 +1,15 @@
-# Stage 1: Build
-FROM node:18-alpine AS build
+FROM node:18-slim
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
+RUN ls -la node_modules/@types
+
 
 COPY . .
+
 RUN npm run build
-
-# Stage 2: Runtime
-FROM node:18-alpine
-
-WORKDIR /usr/src/app
-
-COPY --from=build /usr/src/app/dist ./dist
-COPY package*.json ./
-RUN npm install --only=production
 
 EXPOSE 3000
 

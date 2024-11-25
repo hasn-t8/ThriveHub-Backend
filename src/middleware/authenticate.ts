@@ -87,7 +87,7 @@ export const verifyToken = async (
     
     const { id, email, tokenVersion } = decoded;
 
-    console.log('token', token, email, tokenVersion);
+    // console.log('token', token, email, tokenVersion);
     const result = await pool.query(
       "SELECT token_version FROM users WHERE id = $1",
       [id]
