@@ -20,6 +20,8 @@ services:
       sh -c "
       npm run migrate:prod &&
       node dist/server.js"
+    networks:
+      - th_app_network
 
   postgres:
     image: postgres:latest
@@ -37,3 +39,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - th_app_network
+
+networks:
+  th_app_network:
+    driver: bridge
