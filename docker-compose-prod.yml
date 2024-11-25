@@ -10,12 +10,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      NODE_ENV: production 
-      DB_USER: your_user
-      DB_PASSWORD: your_password
-      DB_HOST: postgres
-      DB_NAME: your_database
-      DB_PORT: 5432
+      NODE_ENV: ${NODE_ENV}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
     command: >
       sh -c "
       npm run migrate:prod &&
@@ -29,11 +29,11 @@ services:
     ports:
       - "6432:5432"
     environment:
-      POSTGRES_USER: your_user
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: your_database
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
-      - ./docker_data/pg_data:/var/lib/postgresql/data
+      - ./docker_data/pg_data_31:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
       interval: 5s
