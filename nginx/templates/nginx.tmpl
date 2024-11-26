@@ -1,5 +1,6 @@
 {{ $containers := where .Docker.Containers "State.Running" true }}
 
+{{ if $containers }}
 {{ range $container := $containers }}
 {{ $domain := index $container.Config.Labels "domain" }}
 {{ $port := index $container.Config.Labels "port" }}
@@ -38,4 +39,12 @@ server {
     }
 }
 {{ end }}
+{{ end }}
+{{ else }}
+# Default fallback server configuration
+server {
+    listen 80 default_server;
+    server_name _;
+    return 404;
+}
 {{ end }}
