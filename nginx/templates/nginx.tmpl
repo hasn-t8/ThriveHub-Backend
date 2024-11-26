@@ -1,6 +1,8 @@
-{{ range $container := .Containers }}
-{{ $domain := index $container.Labels "domain" }}
-{{ $port := index $container.Labels "port" }}
+{{ $containers := where .Docker.Containers "State.Running" true }}
+
+{{ range $container := $containers }}
+{{ $domain := index $container.Config.Labels "domain" }}
+{{ $port := index $container.Config.Labels "port" }}
 
 {{ if and $domain $port }}
 upstream {{ $container.Name }} {

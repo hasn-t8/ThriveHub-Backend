@@ -16,9 +16,9 @@
 ### SSL - First Deployment
 #### Obtain Initial Certificates   
 Start the services without the certbot container running yet:   
-``` docker-compose up -d nginx app postgres docker-gen ```
+``` docker-compose -f docker-compose-prod.yml up -d nginx app postgres docker-gen ```
 Run Certbot interactively to issue certificates for the domain:
-``` docker-compose run certbot certonly --webroot --webroot-path=/var/www/certbot -d th-api.ebsycloud.com ```
+``` docker-compose -f docker-compose-prod.yml run certbot certonly --webroot --webroot-path=/var/www/certbot -d th-api.ebsycloud.com ```
 
 #### Replace th-api.ebsycloud.com with your actual domain.
 Verify that the certificates are generated in ./certbot/conf/live/th-api.ebsycloud.com/.
