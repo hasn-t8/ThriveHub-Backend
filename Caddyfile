@@ -1,0 +1,11 @@
+th-api.ebsycloud.com {
+    reverse_proxy api_server:3000
+    encode gzip
+    log {
+        output stdout
+        format json
+    }
+    tls {
+        on_demand
+    }
+}
