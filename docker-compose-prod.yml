@@ -16,8 +16,6 @@ services:
       - app
     networks:
       - th_app_network
-    networks:
-      - th_app_network
 
   certbot:
     image: certbot/certbot
