@@ -1,27 +1,27 @@
 version: "3.9"
 services:
-  # traefik:
-  #   image: traefik:v2.10
-  #   container_name: traefik
-  #   restart: always
-  #   command:
-  #     - "--api.insecure=true" # Enable Traefik dashboard (disable or secure in production)
-  #     - "--providers.docker=true"
-  #     - "--providers.docker.exposedbydefault=false"
-  #     - "--entrypoints.web.address=:80"
-  #     - "--entrypoints.websecure.address=:443"
-  #     - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-  #     - "--certificatesresolvers.myresolver.acme.email=ahmed@thevamgroup.com"
-  #     - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #     - "8080:8080" # Traefik dashboard
-  #   volumes:
-  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  #     - "./letsencrypt:/letsencrypt" # Persistent storage for certificates
-  #   networks:
-  #     - th_app_network
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    command:
+      - "--api.insecure=true" # Enable Traefik dashboard (disable or secure in production)
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=ahmed@thevamgroup.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt" # Persistent storage for certificates
+    networks:
+      - th_app_network
 
   app:
     build:
@@ -39,11 +39,11 @@ services:
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.app.rule=Host(`th-api.ebsycloud.com`)"
-    #   - "traefik.http.routers.app.entrypoints=websecure"
-    #   - "traefik.http.routers.app.tls.certresolver=myresolver"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`th-api.ebsycloud.com`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
     command: >
       sh -c "
       npm run migrate:prod &&
