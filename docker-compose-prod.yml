@@ -2,32 +2,57 @@ version: "3.9"
 
 services:
   nginx:
-    image: nginx:latest
     container_name: nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
-      - ./certbot/conf:/etc/letsencrypt # Certbot certificates
-    depends_on:
-      - app
+    image: nginx:latest
+    restart: unless-stopped
+    env_file: .env
     networks:
       - th_app_network
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - api_server
+    volumes:
+      - ./nginx/secure/:/etc/nginx/templates/
+      - /etc/localtime:/etc/localtime:ro
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+      - ./nginx/99-autoreload.sh:/docker-entrypoint.d/99-autoreload.sh # Script to autoreload Nginx when certs are renewed
 
   certbot:
     image: certbot/certbot
-    container_name: certbot
     volumes:
-      - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
-      - ./certbot/conf:/etc/letsencrypt # Persistent storage for certificates
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 30h & wait $${!}; certbot renew --quiet --deploy-hook \"nginx -s reload\"; done'"
-    networks:
-      - th_app_network
+      - ./nginx/certbot/conf:/etc/letsencrypt
+      - ./nginx/certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'" # Renew certificates every 12 hours
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #     - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
+  #     - ./certbot/conf:/etc/letsencrypt # Certbot certificates
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - th_app_network
 
-  app:
+  # certbot:
+  #   image: certbot/certbot
+  #   container_name: certbot
+  #   volumes:
+  #     - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
+  #     - ./certbot/conf:/etc/letsencrypt # Persistent storage for certificates
+  #   entrypoint: ""
+  #   networks:
+  #     - th_app_network
+
+  api_server:
     build:
       context: .
       dockerfile: Dockerfile
