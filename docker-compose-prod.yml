@@ -39,14 +39,21 @@ services:
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.app.rule=Host(`th-api.ebsycloud.com`)"
+    #   - "traefik.http.routers.app.entrypoints=websecure"
+    #   - "traefik.http.routers.app.tls.certresolver=myresolver"
+    command: >
+      sh -c "
+      npm run migrate:prod &&
+      node dist/server.js"
     networks:
       - th_app_network
 
   postgres:
     image: postgres:latest
     container_name: my-postgres-db
-    ports:
-      - "6432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
