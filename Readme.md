@@ -13,23 +13,21 @@
 ``` docker exec -it container_name sh -c "npm run seed" ```
 ### To connect to db use the port : 6432
 
-### Traefik
-#### Initialize Traefik Storage
-``` 
-mkdir -p ./letsencrypt
-touch ./letsencrypt/acme.json
-chmod 600 ./letsencrypt/acme.json 
-```   
-#### Tips
-1. Use Let's Encrypt Staging for Testing: To avoid hitting Let's Encrypt rate limits during setup, use the staging endpoint:
+### SSL - First Deployment
+#### Obtain Initial Certificates   
+Start the services without the certbot container running yet:   
+``` docker-compose up -d nginx app postgres docker-gen ```
+Run Certbot interactively to issue certificates for the domain:
+``` docker-compose run certbot certonly --webroot --webroot-path=/var/www/certbot -d th-api.ebsycloud.com ```
 
+#### Replace th-api.ebsycloud.com with your actual domain.
+Verify that the certificates are generated in ./certbot/conf/live/th-api.ebsycloud.com/.
 
-``` yaml
-- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
-```  
+### Test HTTPS
+Restart Nginx to load the new configuration:
 
-2. Secure the Traefik Dashboard: In production, disable the insecure dashboard or secure it with authentication.
+``` docker-compose restart nginx ```   
+Access your API at https://th-api.ebsycloud.com.
 
-3. DNS Configuration: Ensure your domain (your-domain.com) points to your VPS's public IP address.
 
 

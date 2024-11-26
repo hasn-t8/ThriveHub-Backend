@@ -1,0 +1,39 @@
+{{ range $container := .Containers }}
+{{ $domain := index $container.Labels "domain" }}
+{{ $port := index $container.Labels "port" }}
+
+{{ if and $domain $port }}
+upstream {{ $container.Name }} {
+    server {{ $container.NetworkSettings.IPAddress }}:{{ $port }};
+}
+
+server {
+    listen 80;
+    server_name {{ $domain }};
+
+    # Redirect HTTP to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ $domain }};
+
+    ssl_certificate /etc/letsencrypt/live/{{ $domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ $domain }}/privkey.pem;
+
+    location / {
+        proxy_pass http://{{ $container.Name }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+{{ end }}
+{{ end }}
