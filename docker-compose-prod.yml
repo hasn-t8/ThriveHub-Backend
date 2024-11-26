@@ -1,7 +1,9 @@
 version: "3.9"
+
 services:
   nginx:
     image: nginx:latest
+    container_name: nginx
     ports:
       - "80:80"
       - "443:443"
@@ -10,25 +12,20 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
       - ./certbot/conf:/etc/letsencrypt # Certbot certificates
+    depends_on:
+      - app
     networks:
       - th_app_network
-
-  docker-gen:
-    image: jwilder/docker-gen
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - ./nginx/templates/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl
-      - ./nginx/conf.d:/etc/nginx/conf.d
-    command: -notify "nginx -s reload" /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
     networks:
       - th_app_network
 
   certbot:
     image: certbot/certbot
+    container_name: certbot
     volumes:
       - ./certbot/www:/var/www/certbot # For Let's Encrypt challenge
       - ./certbot/conf:/etc/letsencrypt # Persistent storage for certificates
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 30h & wait $${!}; certbot renew; nginx -s reload; done'"
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 30h & wait $${!}; certbot renew --quiet --deploy-hook \"nginx -s reload\"; done'"
     networks:
       - th_app_network
 
