@@ -6,6 +6,7 @@ export interface User {
   password: string;
   is_active: boolean;
   token_version: number;
+  full_name: string;
 }
 
 /** --------------------- Find User By Email --------------------- */
@@ -15,10 +16,10 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
 };
 
 /** --------------------- Create User --------------------- */
-export const createUser = async (email: string, password: string): Promise<number> => {
+export const createUser = async (email: string, password: string, full_name: string): Promise<number> => {
   const result = await pool.query(
-    'INSERT INTO users (email, password, token_version, is_active) VALUES ($1, $2, 0, true) RETURNING id',
-    [email, password]
+    'INSERT INTO users (email, password, token_version, is_active, full_name) VALUES ($1, $2, 0, true, $3) RETURNING id',
+    [email, password, full_name]
   );
   return result.rows[0].id; // Return the new user's ID
 };

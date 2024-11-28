@@ -117,7 +117,7 @@ router.post(
       return;
     }
 
-    const { email, password, types } = req.body;
+    const { email, password, types, full_name } = req.body;
 
     try {
       // Check if email already exists
@@ -131,7 +131,7 @@ router.post(
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create the user and get their ID
-      const userId = await createUser(email, hashedPassword);
+      const userId = await createUser(email, hashedPassword, full_name);
 
       // Assign user types
       await assignUserTypes(userId, types);

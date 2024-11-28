@@ -4,13 +4,13 @@ services:
     image: postgres:latest
     container_name: my-postgres-db
     ports:
-      - "6432:5432"
+      - "${DB_PORT}:5432"
     environment:
-      POSTGRES_USER: your_user
-      POSTGRES_PASSWORD: your_password
-      POSTGRES_DB: your_database
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
-      - ./docker_data/pg_data:/var/lib/postgresql/data
+      - ./docker_data/pg_data_3:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
       interval: 5s
