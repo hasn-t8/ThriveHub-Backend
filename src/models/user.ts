@@ -1,4 +1,5 @@
 import pool from '../config/db';
+import bcrypt from "bcrypt";
 
 export interface User {
   id: number;
@@ -17,9 +18,13 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
 
 /** --------------------- Create User --------------------- */
 export const createUser = async (email: string, password: string, full_name: string): Promise<number> => {
+  
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const result = await pool.query(
     'INSERT INTO users (email, password, token_version, is_active, full_name) VALUES ($1, $2, 0, true, $3) RETURNING id',
-    [email, password, full_name]
+    [email, hashedPassword, full_name]
   );
   return result.rows[0].id; // Return the new user's ID
 };

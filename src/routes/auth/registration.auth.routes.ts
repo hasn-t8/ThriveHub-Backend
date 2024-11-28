@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import bcrypt from "bcrypt";
+
 import {
   createUser,
   findUserByEmail,
@@ -127,11 +127,8 @@ router.post(
         return;
       }
 
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
       // Create the user and get their ID
-      const userId = await createUser(email, hashedPassword, full_name);
+      const userId = await createUser(email, password, full_name);
 
       // Assign user types
       await assignUserTypes(userId, types);
