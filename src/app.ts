@@ -1,4 +1,6 @@
 import express, { Application } from "express";
+const cors = require('cors');
+
 import { seedUserTypes } from "./seeds/seed-user-types";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
@@ -7,6 +9,11 @@ import routes from "./routes";
 import { seedAdmin } from "./seeds/seed-admin";
 
 const app: Application = express();
+
+const isProduction = process.env.NODE_ENV === 'production';
+if (!isProduction) {
+  app.use(cors());
+} 
 
 // Middleware
 app.use(express.json());
