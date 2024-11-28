@@ -5,8 +5,8 @@
 
 # Deployment
 ### Check the .env
-### Build the image
-``` docker build --no-cache -t api_server_v3-app .  ```
+### Build the image and run the container
+``` docker-compose -f docker-compose-prod.yml up --build -d --remove-orphans ``` 
 ### Run the container
 ``` docker-compose -f docker-compose-prod.yml up  -d --remove-orphans ```
 ### To seed 

@@ -52,6 +52,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "6432:5432"
     volumes:
       - ./docker_data/pg_data_31:/var/lib/postgresql/data
     healthcheck:
