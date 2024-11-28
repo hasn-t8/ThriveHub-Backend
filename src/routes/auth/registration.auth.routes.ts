@@ -133,15 +133,15 @@ router.post(
       // Assign user types
       await assignUserTypes(userId, types);
 
-      // // Generate a 6-digit verification code
-      // const verificationCode = crypto.randomInt(100000, 999999);
+      // Generate a 6-digit verification code
+      const verificationCode = crypto.randomInt(100000, 999999);
 
-      // // Save the verification code
-      // await saveVerificationCode(userId, verificationCode);
+      // Save the verification code
+      await saveVerificationCode(userId, verificationCode);
 
       // console.log("New User registered with the verificationCode: " + verificationCode);
 
-      res.status(201).json({ message: 'User registered successfully' });
+      res.status(201).json({ message: `User registered successfully ${verificationCode}` });
       return;
     } catch (error) {
       console.error("Error registering user:", error);

@@ -15,7 +15,13 @@ router.post("/auth/verify-token", (req: Request, res: Response): void => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    res.status(200).json({ message: "Token is valid", decoded });
+    let email 
+
+    if (typeof decoded === 'object' && 'email' in decoded) {
+      email = decoded.email;
+    }
+
+    res.status(200).json({ status: true, message: "token is valid", email });
     return;
   } catch (error) {
     // console.error("Token verification failed:", error);

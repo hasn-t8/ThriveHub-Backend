@@ -17,7 +17,7 @@ const validatePasswordChange = [
 
 // Route to change the password
 router.post(
-  '/forgot-password/change',
+  '/auth/forgot-password/change',
   validatePasswordChange,
   async (req: Request, res: Response): Promise<void> => {
     const errors = validationResult(req);

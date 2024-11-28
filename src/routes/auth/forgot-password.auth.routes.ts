@@ -57,7 +57,7 @@ router.post(
 
       res
         .status(200)
-        .json({ message: "Password reset token sent successfully" });
+        .json({ message: `Password reset token sent successfully. ${resetToken}` });
     } catch (error) {
       console.error("Error in Forgot Password:", error);
       res.status(500).json({ error: "Internal Server Error" });
