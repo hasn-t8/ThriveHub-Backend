@@ -1,7 +1,7 @@
 import { isUserTypesTableEmpty, addUserType } from '../models/user-types';
 
 export const seedUserTypes = async (): Promise<void> => {
-  const userTypes = ['registered-user', 'business-owner', 'team-member'];
+  const userTypes = ['registered-user', 'business-owner', 'team-member', 'admin'];
 
   try {
     const isEmpty = await isUserTypesTableEmpty();

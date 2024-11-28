@@ -1,4 +1,4 @@
-import { findUserByEmail, createUser } from "../models/user";
+import { findUserByEmail, createUser, assignUserTypes } from "../models/user";
 import { attachPolicyToUser } from "../models/policy";
 
 export const seedAdmin = async (): Promise<void> => {
@@ -12,6 +12,9 @@ export const seedAdmin = async (): Promise<void> => {
 
     // Create admin user
     const adminId = await createUser(adminEmail, adminPassword, "Admin User");
+
+    // Assign user types
+    await assignUserTypes(adminId, ["admin"]);
 
     // Attach admin policies
     const adminPolicy = {
