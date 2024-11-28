@@ -23,7 +23,90 @@ const validateRegister = [
   check("types.*").isString().withMessage("Each type must be a string"),
 ];
 
-// Register a user
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: Authentication and user registration
+ *
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - types
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's email address.
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 description: The user's password (at least 6 characters).
+ *                 example: "securePassword123"
+ *               types:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: An array of user types.
+ *                 example: ["registered-user", "business-owner", "team-member"]
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User registered successfully
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         description: Error message
+ *                         example: Password must be at least 6 characters
+ *       409:
+ *         description: Conflict error (email already exists)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Conflict: Email already exists"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
 router.post(
   "/auth/register",
   validateRegister,
@@ -64,7 +147,7 @@ router.post(
       res.status(201).json({ message: 'User registered successfully' });
       return;
     } catch (error) {
-      // console.error("Error registering user:", error);
+      console.error("Error registering user:", error);
       res.status(500).json({ error: "Internal Server Error" });
       return;
     }
