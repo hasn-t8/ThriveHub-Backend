@@ -8,6 +8,8 @@ export interface User {
   is_active: boolean;
   token_version: number;
   full_name: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 /** --------------------- Find User By Email --------------------- */
