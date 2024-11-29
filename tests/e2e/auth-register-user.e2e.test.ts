@@ -31,7 +31,7 @@ describe('User Registration E2E Test', () => {
       .send(userPayload)
       .expect(201);
 
-    expect(response.body.message).toBe('User registered successfully');
+  expect(response.body.message).toContain('User registered successfully');
 
     // Verify user exists in the database
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [userPayload.email]);

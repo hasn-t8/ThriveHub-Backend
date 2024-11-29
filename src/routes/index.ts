@@ -9,6 +9,7 @@ import logoutRoute from './auth/logout.auth.routes';
 import forgotPasswordRoute from './auth/forgot-password.auth.routes';
 import forgotPasswordChangeRoute from './auth/forgot-password-change.auth.routes';
 import changePasswordRoute from './auth/change-password.auth.routes';
+import createProfile from './profiles/create.profile.routes';
 
 /** ---------------------  users routes --------------------- */
 import usersRoute from './users.routes';
@@ -26,6 +27,7 @@ router.use(logoutRoute);
 router.use(forgotPasswordRoute);
 router.use(forgotPasswordChangeRoute);
 router.use(changePasswordRoute);
+router.use(createProfile);
 
 /** ---------------------  user routes --------------------- */
 router.use(usersRoute);

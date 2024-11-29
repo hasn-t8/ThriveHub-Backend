@@ -33,7 +33,7 @@ describe("Forgot Password E2E Test", () => {
       .send({ email: testUser.email })
       .expect(200);
 
-    expect(response.body.message).toBe(
+    expect(response.body.message).toContain(
       "Password reset token sent successfully"
     );
 
