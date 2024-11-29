@@ -1,21 +1,20 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
-import { findUserById } from "../../models/user";
 import {
   createProfile,
   createPersonalProfile,
   createBusinessProfile,
 } from "../../models/profile";
+import { AuthenticatedRequest } from "../../types/authenticated-request";
+import { verifyToken } from "../../middleware/authenticate";
 
 const router = Router();
 
 // Validation middleware for creating profiles
 const validateProfileCreation = [
-  check("userId").isInt().withMessage("User ID must be an integer"),
   check("profileType")
     .isIn(["business", "personal"])
     .withMessage("Profile type must be either 'business' or 'personal'"),
-  check("fullName").notEmpty().withMessage("Full name is required"),
   check("profileData").isObject().withMessage("Profile data must be an object"),
 ];
 
@@ -23,8 +22,10 @@ const validateProfileCreation = [
  * @swagger
  * /api/profiles:
  *   post:
- *     summary: Create a new profile for a user
+ *     summary: Create a new profile for the authenticated user
  *     tags: [Profiles]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -32,49 +33,43 @@ const validateProfileCreation = [
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - profileType
- *               - fullName
  *               - profileData
  *             properties:
- *               userId:
- *                 type: integer
  *               profileType:
  *                 type: string
- *               fullName:
- *                 type: string
+ *                 description: Type of profile ("business" or "personal")
  *               profileData:
  *                 type: object
+ *                 description: Profile-specific data
  *     responses:
  *       201:
  *         description: Profile created successfully
  *       400:
  *         description: Validation errors
- *       404:
- *         description: User not found
  *       500:
  *         description: Internal server error
  */
 router.post(
   "/profiles",
+  verifyToken,
   validateProfileCreation,
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });
       return;
     }
 
-    const { userId, profileType, profileData } = req.body;
+    const { profileType, profileData } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
 
     try {
-      // Check if the user exists
-      const user = await findUserById(userId);
-      if (!user) {
-        res.status(404).json({ error: "User not found" });
-        return;
-      }
-
       // Create the profile
       const profileId = await createProfile(userId, profileType);
 

@@ -2,34 +2,41 @@ import request from "supertest";
 import app from "../../src/app"; // Your Express app
 import bcrypt from "bcrypt";
 import pool from "../../src/config/db"; // Your database connection
+import jwt from "jsonwebtoken";
 
 describe("Profile Creation E2E Test", () => {
   const testUser = {
-    email: "testuser@example.com",
+    email: "testuser4profileTest@example.com",
     password: "password123",
     full_name: "Test User",
   };
 
+  let userId: number; // Store the user ID for cleanup and testing
+  let token: string; // Store the JWT for authenticated requests
+
   beforeAll(async () => {
     // Insert a test user into the database
     const hashedPassword = await bcrypt.hash(testUser.password, 10);
-    await pool.query(
-      "INSERT INTO users (email, password, is_active, token_version, full_name) VALUES ($1, $2, $3, $4, $5)",
+
+    const result = await pool.query(
+      "INSERT INTO users (email, password, is_active, token_version, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING id",
       [testUser.email, hashedPassword, true, 0, testUser.full_name]
+    );
+    userId = result.rows[0].id;
+
+    // Generate a JWT for the test user
+    token = jwt.sign(
+      { id: userId, email: testUser.email, tokenVersion: 0 },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "3m",
+      }
     );
   });
 
   afterAll(async () => {
-    // Clean up only the profiles created during this test suite
-    const userResult = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [testUser.email]
-    );
-
-    if ((userResult?.rowCount ?? 0) > 0) {
-      const userId = userResult.rows[0].id;
-
-      // Delete associated profiles for the test user
+    if (userId) {
+      // Clean up associated profiles and the test user
       await pool.query(
         "DELETE FROM profiles_business WHERE profile_id IN (SELECT id FROM profiles WHERE user_id = $1)",
         [userId]
@@ -39,8 +46,6 @@ describe("Profile Creation E2E Test", () => {
         [userId]
       );
       await pool.query("DELETE FROM profiles WHERE user_id = $1", [userId]);
-
-      // Delete the test user
       await pool.query("DELETE FROM users WHERE id = $1", [userId]);
     }
 
@@ -48,16 +53,8 @@ describe("Profile Creation E2E Test", () => {
     await pool.end();
   });
 
-  it("should create a personal profile successfully", async () => {
-    // Get the user ID for the test user
-    const userResult = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [testUser.email]
-    );
-    const userId = userResult.rows[0].id;
-
+  it.only("should create a personal profile successfully", async () => {
     const payload = {
-      userId,
       profileType: "personal",
       profileData: {
         occupation: "Software Engineer",
@@ -66,6 +63,7 @@ describe("Profile Creation E2E Test", () => {
 
     const response = await request(app)
       .post("/api/profiles")
+      .set("Authorization", `Bearer ${token}`) // Add the JWT to the Authorization header
       .send(payload)
       .expect(201);
 
@@ -87,15 +85,7 @@ describe("Profile Creation E2E Test", () => {
   });
 
   it("should create a business profile successfully", async () => {
-    // Get the user ID for the test user
-    const userResult = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [testUser.email]
-    );
-    const userId = userResult.rows[0].id;
-
     const payload = {
-      userId,
       profileType: "business",
       profileData: {
         business_website_url: "https://example.com",
@@ -111,6 +101,7 @@ describe("Profile Creation E2E Test", () => {
 
     const response = await request(app)
       .post("/api/profiles")
+      .set("Authorization", `Bearer ${token}`) // Add the JWT to the Authorization header
       .send(payload)
       .expect(201);
 
@@ -133,8 +124,17 @@ describe("Profile Creation E2E Test", () => {
   });
 
   it("should return 404 if user does not exist", async () => {
+    console.log("process.env.JWT_SECRET", process.env.JWT_SECRET);
+
+    const invalidToken = jwt.sign(
+      { id: 99999, email: "nonexistent@example.com", tokenVersion: 0 },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "3m",
+      }
+    );
+
     const payload = {
-      userId: 99999, // Non-existent user ID
       profileType: "personal",
       profileData: {
         occupation: "Non-existent Occupation",
@@ -143,6 +143,7 @@ describe("Profile Creation E2E Test", () => {
 
     const response = await request(app)
       .post("/api/profiles")
+      .set("Authorization", `Bearer ${invalidToken}`) // Use an invalid JWT
       .send(payload)
       .expect(404);
 
@@ -151,19 +152,18 @@ describe("Profile Creation E2E Test", () => {
 
   it("should return 400 for validation errors", async () => {
     const payload = {
-      userId: "invalid-id", // Invalid user ID
       profileType: "invalid-type", // Invalid profile type
       profileData: {}, // Missing required fields
     };
 
     const response = await request(app)
       .post("/api/profiles")
+      .set("Authorization", `Bearer ${token}`) // Add the JWT to the Authorization header
       .send(payload)
       .expect(400);
 
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ msg: "User ID must be an integer" }),
         expect.objectContaining({
           msg: "Profile type must be either 'business' or 'personal'",
         }),
