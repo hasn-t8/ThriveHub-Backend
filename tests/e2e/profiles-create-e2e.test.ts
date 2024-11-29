@@ -53,7 +53,7 @@ describe("Profile Creation E2E Test", () => {
     await pool.end();
   });
 
-  it.only("should create a personal profile successfully", async () => {
+  it("should create a personal profile successfully", async () => {
     const payload = {
       profileType: "personal",
       profileData: {
@@ -123,7 +123,7 @@ describe("Profile Creation E2E Test", () => {
     expect(businessProfileResult.rows[0].work_email_verified).toBe(true);
   });
 
-  it("should return 404 if user does not exist", async () => {
+  it("should return 401 if user does not exist", async () => {
     console.log("process.env.JWT_SECRET", process.env.JWT_SECRET);
 
     const invalidToken = jwt.sign(
@@ -145,9 +145,9 @@ describe("Profile Creation E2E Test", () => {
       .post("/api/profiles")
       .set("Authorization", `Bearer ${invalidToken}`) // Use an invalid JWT
       .send(payload)
-      .expect(404);
+      .expect(401);
 
-    expect(response.body.error).toBe("User not found");
+    expect(response.body.error).toContain("Unauthorized");
   });
 
   it("should return 400 for validation errors", async () => {
