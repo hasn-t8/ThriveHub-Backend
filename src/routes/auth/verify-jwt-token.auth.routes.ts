@@ -69,7 +69,7 @@ router.post("/auth/verify-token", (req: Request, res: Response): void => {
  *                   type: string
  *                   example: user@example.com
  *       400:
- *         description: Bad Request: Token is missing
+ *         description: 'Bad Request: Token is missing'
  *         content:
  *           application/json:
  *             schema:
@@ -77,9 +77,9 @@ router.post("/auth/verify-token", (req: Request, res: Response): void => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Bad Request: Token is required
+ *                   example: 'Bad Request: Token is required'
  *       401:
- *         description: Unauthorized: Invalid or expired token
+ *         description: 'Unauthorized: Invalid or expired token'
  *         content:
  *           application/json:
  *             schema:
@@ -87,7 +87,7 @@ router.post("/auth/verify-token", (req: Request, res: Response): void => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Unauthorized: Invalid or expired token
+ *                   example: 'Unauthorized: Invalid or expired token'
  */
 
 export default router;

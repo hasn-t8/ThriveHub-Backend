@@ -174,7 +174,7 @@ router.post(
  *                         type: string
  *                         example: Profile type must be either 'business' or 'personal'
  *       401:
- *         description: Unauthorized: Missing or invalid token
+ *         description: 'Unauthorized: Missing or invalid token'
  *         content:
  *           application/json:
  *             schema:

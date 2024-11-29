@@ -127,7 +127,7 @@ router.post(
  *                         type: string
  *                         example: Email must be valid
  *       401:
- *         description: Unauthorized: Invalid credentials
+ *         description: 'Unauthorized: Invalid credentials'
  *         content:
  *           application/json:
  *             schema:
@@ -135,9 +135,9 @@ router.post(
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Unauthorized: Invalid credentials
+ *                   example: 'Unauthorized: Invalid credentials'
  *       403:
- *         description: Forbidden: User is inactive
+ *         description: 'Forbidden: User is inactive'
  *         content:
  *           application/json:
  *             schema:
@@ -145,7 +145,7 @@ router.post(
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Forbidden: User is inactive
+ *                   example: 'Forbidden: User is inactive'
  *       429:
  *         description: Too many login attempts
  *         content:

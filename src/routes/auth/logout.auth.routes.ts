@@ -52,7 +52,7 @@ router.post(
  *                   type: string
  *                   example: Logout successful
  *       401:
- *         description: Unauthorized: No user found or invalid token
+ *         description: "Unauthorized: No user found or invalid token"
  *         content:
  *           application/json:
  *             schema:
@@ -60,7 +60,7 @@ router.post(
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Unauthorized: No user found
+ *                   example: 'Unauthorized: No user found'
  *       500:
  *         description: Internal server error
  *         content:
