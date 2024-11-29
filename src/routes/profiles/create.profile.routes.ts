@@ -18,38 +18,6 @@ const validateProfileCreation = [
   check("profileData").isObject().withMessage("Profile data must be an object"),
 ];
 
-/**
- * @swagger
- * /api/profiles:
- *   post:
- *     summary: Create a new profile for the authenticated user
- *     tags: [Profiles]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - profileType
- *               - profileData
- *             properties:
- *               profileType:
- *                 type: string
- *                 description: Type of profile ("business" or "personal")
- *               profileData:
- *                 type: object
- *                 description: Profile-specific data
- *     responses:
- *       201:
- *         description: Profile created successfully
- *       400:
- *         description: Validation errors
- *       500:
- *         description: Internal server error
- */
 router.post(
   "/profiles",
   verifyToken,
@@ -108,5 +76,123 @@ router.post(
     }
   }
 );
+
+/**
+ * @swagger
+ * tags:
+ *   name: Profiles
+ *   description: Endpoints for managing user profiles
+ *
+ * /profiles:
+ *   post:
+ *     summary: Create a profile for the authenticated user
+ *     tags: [Profiles]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - profileType
+ *               - profileData
+ *             properties:
+ *               profileType:
+ *                 type: string
+ *                 description: The type of profile to create (either 'business' or 'personal').
+ *                 example: personal
+ *               profileData:
+ *                 type: object
+ *                 description: The profile-specific data.
+ *                 oneOf:
+ *                   - type: object
+ *                     properties:
+ *                       occupation:
+ *                         type: string
+ *                         description: The occupation of the user (for personal profile).
+ *                         example: Software Engineer
+ *                   - type: object
+ *                     properties:
+ *                       business_website_url:
+ *                         type: string
+ *                         description: The website URL of the business.
+ *                         example: "https://example.com"
+ *                       org_name:
+ *                         type: string
+ *                         description: The name of the organization.
+ *                         example: "Tech Corp"
+ *                       job_title:
+ *                         type: string
+ *                         description: The job title within the organization.
+ *                         example: "CTO"
+ *                       work_email:
+ *                         type: string
+ *                         description: The work email address.
+ *                         example: "jane@techcorp.com"
+ *                       category:
+ *                         type: string
+ *                         description: The category of the business.
+ *                         example: "Technology"
+ *                       logo_url:
+ *                         type: string
+ *                         description: The URL to the business logo.
+ *                         example: "https://example.com/logo.png"
+ *                       about_business:
+ *                         type: string
+ *                         description: A brief description of the business.
+ *                         example: "We build innovative tech solutions."
+ *                       work_email_verified:
+ *                         type: boolean
+ *                         description: Indicates if the work email has been verified.
+ *                         example: true
+ *     responses:
+ *       201:
+ *         description: Profile created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Profile created successfully
+ *       400:
+ *         description: Validation errors in the request body
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         example: Profile type must be either 'business' or 'personal'
+ *       401:
+ *         description: Unauthorized: Missing or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
 
 export default router;
