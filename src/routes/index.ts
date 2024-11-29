@@ -12,7 +12,7 @@ import changePasswordRoute from './auth/change-password.auth.routes';
 import createProfile from './profiles/create.profile.routes';
 
 /** ---------------------  users routes --------------------- */
-import usersRoute from './users.routes';
+
 
 const router = Router();
 
@@ -30,6 +30,6 @@ router.use(changePasswordRoute);
 router.use(createProfile);
 
 /** ---------------------  user routes --------------------- */
-router.use(usersRoute);
+
 
 export default router;

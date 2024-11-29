@@ -54,7 +54,9 @@ router.post(
 
       await activateUser(email);
 
-      await pool.query("DELETE FROM user_verification WHERE user_id = $1", [user.id]);
+      await pool.query("DELETE FROM user_verification WHERE user_id = $1", [
+        user.id,
+      ]);
 
       res.status(200).json({ message: "Account verified successfully" });
     } catch (error) {
@@ -93,8 +95,8 @@ router.post(
         return;
       }
 
-      console.log('result.rows[0].code', result.rows[0].code);
-      
+      console.log("result.rows[0].code", result.rows[0].code);
+
       res.status(200).json({ verificationCode: result.rows[0].code });
     } catch (error) {
       console.error("Error fetching verification code:", error);
@@ -103,5 +105,143 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * tags:
+ *   name: Account Activation
+ *   description: Endpoints for account activation and verification
+ *
+ * /api/auth/activate-account/verify:
+ *   post:
+ *     summary: Verify a user's account with a code
+ *     tags: [Account Activation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the user.
+ *                 example: user@example.com
+ *               code:
+ *                 type: integer
+ *                 description: The 6-digit verification code.
+ *                 example: 123456
+ *     responses:
+ *       200:
+ *         description: Account verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Account verified successfully
+ *       400:
+ *         description: Validation errors or invalid code
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid verification code
+ *       404:
+ *         description: User not found or code not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ *
+ * /api/auth/activate-account/get-code:
+ *   post:
+ *     summary: Retrieve the verification code for a user's account
+ *     tags: [Account Activation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the user.
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Verification code retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 verificationCode:
+ *                   type: integer
+ *                   description: The verification code.
+ *                   example: 123456
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         description: Error message
+ *                         example: Email must be valid
+ *       404:
+ *         description: User not found or code not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
 
 export default router;

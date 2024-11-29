@@ -23,6 +23,52 @@ const validateRegister = [
   check("types.*").isString().withMessage("Each type must be a string"),
 ];
 
+router.post(
+  "/auth/register",
+  validateRegister,
+  async (req: Request, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const { email, password, types, full_name } = req.body;
+
+    try {
+      // Check if email already exists
+      const existingUser = await findUserByEmail(email);
+      if (existingUser) {
+        res.status(409).json({ error: "Conflict: Email already exists" });
+        return;
+      }
+
+      // Create the user and get their ID
+      const userId = await createUser(email, password, full_name);
+
+      // Assign user types
+      await assignUserTypes(userId, types);
+
+      // Generate a 6-digit verification code
+      const verificationCode = crypto.randomInt(100000, 999999);
+
+      // Save the verification code
+      await saveVerificationCode(userId, verificationCode);
+
+      // console.log("New User registered with the verificationCode: " + verificationCode);
+
+      res
+        .status(201)
+        .json({ message: `User registered successfully ${verificationCode}` });
+      return;
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+      return;
+    }
+  }
+);
+
 /**
  * @swagger
  * tags:
@@ -106,49 +152,6 @@ const validateRegister = [
  *                 error:
  *                   type: string
  *                   example: Internal Server Error
- */
-router.post(
-  "/auth/register",
-  validateRegister,
-  async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-
-    const { email, password, types, full_name } = req.body;
-
-    try {
-      // Check if email already exists
-      const existingUser = await findUserByEmail(email);
-      if (existingUser) {
-        res.status(409).json({ error: "Conflict: Email already exists" });
-        return;
-      }
-
-      // Create the user and get their ID
-      const userId = await createUser(email, password, full_name);
-
-      // Assign user types
-      await assignUserTypes(userId, types);
-
-      // Generate a 6-digit verification code
-      const verificationCode = crypto.randomInt(100000, 999999);
-
-      // Save the verification code
-      await saveVerificationCode(userId, verificationCode);
-
-      // console.log("New User registered with the verificationCode: " + verificationCode);
-
-      res.status(201).json({ message: `User registered successfully ${verificationCode}` });
-      return;
-    } catch (error) {
-      console.error("Error registering user:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
-    }
-  }
-);
+ * */
 
 export default router;

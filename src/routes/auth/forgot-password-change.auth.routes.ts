@@ -64,4 +64,89 @@ router.post(
   }
 );
 
+/**
+ * @swagger
+ * tags:
+ *   name: Password Management
+ *   description: Endpoints for managing user passwords
+ *
+ * /api/auth/forgot-password/change:
+ *   post:
+ *     summary: Change a user's password using a reset token
+ *     tags: [Password Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's email address.
+ *                 example: user@example.com
+ *               token:
+ *                 type: string
+ *                 description: The reset token for the password reset.
+ *                 example: abc123resetToken
+ *               newPassword:
+ *                 type: string
+ *                 description: The new password to set (must be at least 6 characters long).
+ *                 example: newSecurePassword456
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password changed successfully
+ *       400:
+ *         description: Validation errors or invalid/expired reset token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         example: Password must be at least 6 characters
+ *                 error:
+ *                   type: string
+ *                   example: Invalid or expired reset token
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
 export default router;

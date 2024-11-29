@@ -38,13 +38,15 @@ router.post(
       await saveResetToken(user.id, resetToken);
 
       // Send reset token via email
-    //   const transporter = nodemailer.createTransport({
-    //     service: "gmail", // Replace with your email service
-    //     auth: {
-    //       user: process.env.EMAIL_USER, // Set this in your .env file
-    //       pass: process.env.EMAIL_PASS, // Set this in your .env file
-    //     },
-    //   });
+      // Uncomment below to enable email sending with nodemailer
+      /*
+      const transporter = nodemailer.createTransport({
+        service: "gmail", // Replace with your email service
+        auth: {
+          user: process.env.EMAIL_USER, // Set this in your .env file
+          pass: process.env.EMAIL_PASS, // Set this in your .env file
+        },
+      });
 
       const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -53,7 +55,8 @@ router.post(
         text: `You requested a password reset. Use this token to reset your password: ${resetToken}`,
       };
 
-    //   await transporter.sendMail(mailOptions);
+      await transporter.sendMail(mailOptions);
+      */
 
       res
         .status(200)
@@ -64,5 +67,77 @@ router.post(
     }
   }
 );
+
+/**
+ * @swagger
+ * tags:
+ *   name: Password Management
+ *   description: Endpoints for managing user passwords
+ *
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset token
+ *     tags: [Password Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The email address of the user requesting the password reset.
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Password reset token sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password reset token sent successfully
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         example: Email must be valid
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: User not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
 
 export default router;
