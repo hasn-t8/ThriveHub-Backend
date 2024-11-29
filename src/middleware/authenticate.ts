@@ -100,7 +100,7 @@ export const verifyToken = async (
       return;
     }
 
-    req.user = { id, email, tokenVersion }; // Attach full user object
+    req.user = { id, email, tokenVersion };
     next();
   } catch (error) {
     console.log("verifyToken: ", error);
