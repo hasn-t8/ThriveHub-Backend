@@ -88,3 +88,190 @@ export const createBusinessProfile = async (
     ]
   );
 };
+
+
+export const getCompleteProfileByUserId = async (userId: number) => {
+  const profiles = await pool.query(
+    `
+    SELECT p.id AS profile_id, p.profile_type, 
+           pp.occupation, pp.date_of_birth, pp.phone_number, pp.address_line_1, 
+           pp.address_line_2, pp.address_city, pp.address_zip_code, pp.img_profile_url,
+           pb.business_website_url, pb.org_name, pb.job_title, pb.work_email, 
+           pb.category, pb.logo_url, pb.about_business, pb.work_email_verified
+    FROM profiles p
+    LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+    LEFT JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.user_id = $1
+    `,
+    [userId]
+  );
+
+  return profiles.rows;
+};
+
+export const createOrUpdatePersonalProfile = async (userId: number, data: any) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Check if profile exists
+    const profileResult = await client.query(
+      `
+      SELECT id FROM profiles 
+      WHERE user_id = $1 AND profile_type = 'personal'
+      `,
+      [userId]
+    );
+
+    let profileId;
+
+    if (profileResult.rowCount && profileResult.rowCount > 0) {
+      profileId = profileResult.rows[0].id;
+
+      // Update profiles_personal table
+      await client.query(
+        `
+        UPDATE profiles_personal 
+        SET occupation = $1, date_of_birth = $2, phone_number = $3, 
+            address_line_1 = $4, address_line_2 = $5, address_city = $6, 
+            address_zip_code = $7, img_profile_url = $8
+        WHERE profile_id = $9
+        `,
+        [
+          data.occupation,
+          data.date_of_birth,
+          data.phone_number,
+          data.address_line_1,
+          data.address_line_2,
+          data.address_city,
+          data.address_zip_code,
+          data.img_profile_url,
+          profileId,
+        ]
+      );
+    } else {
+      // Create new profile and profiles_personal entry
+      const newProfileResult = await client.query(
+        `
+        INSERT INTO profiles (user_id, profile_type) 
+        VALUES ($1, 'personal') RETURNING id
+        `,
+        [userId]
+      );
+
+      profileId = newProfileResult.rows[0].id;
+
+      await client.query(
+        `
+        INSERT INTO profiles_personal (profile_id, occupation, date_of_birth, phone_number, 
+                                       address_line_1, address_line_2, address_city, 
+                                       address_zip_code, img_profile_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          profileId,
+          data.occupation,
+          data.date_of_birth,
+          data.phone_number,
+          data.address_line_1,
+          data.address_line_2,
+          data.address_city,
+          data.address_zip_code,
+          data.img_profile_url,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+    return { profileId, ...data };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const createOrUpdateBusinessProfile = async (userId: number, data: any) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Check if profile exists
+    const profileResult = await client.query(
+      `
+      SELECT id FROM profiles 
+      WHERE user_id = $1 AND profile_type = 'business'
+      `,
+      [userId]
+    );
+
+    let profileId;
+
+    if (profileResult.rowCount && profileResult.rowCount > 0) {
+      profileId = profileResult.rows[0].id;
+
+      // Update profiles_business table
+      await client.query(
+        `
+        UPDATE profiles_business 
+        SET business_website_url = $1, org_name = $2, job_title = $3, 
+            work_email = $4, category = $5, logo_url = $6, about_business = $7, 
+            work_email_verified = $8
+        WHERE profile_id = $9
+        `,
+        [
+          data.business_website_url,
+          data.org_name,
+          data.job_title,
+          data.work_email,
+          data.category,
+          data.logo_url,
+          data.about_business,
+          data.work_email_verified || false,
+          profileId,
+        ]
+      );
+    } else {
+      // Create new profile and profiles_business entry
+      const newProfileResult = await client.query(
+        `
+        INSERT INTO profiles (user_id, profile_type) 
+        VALUES ($1, 'business') RETURNING id
+        `,
+        [userId]
+      );
+
+      profileId = newProfileResult.rows[0].id;
+
+      await client.query(
+        `
+        INSERT INTO profiles_business (profile_id, business_website_url, org_name, 
+                                       job_title, work_email, category, logo_url, 
+                                       about_business, work_email_verified)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `,
+        [
+          profileId,
+          data.business_website_url,
+          data.org_name,
+          data.job_title,
+          data.work_email,
+          data.category,
+          data.logo_url,
+          data.about_business,
+          data.work_email_verified || false,
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+    return { profileId, ...data };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+

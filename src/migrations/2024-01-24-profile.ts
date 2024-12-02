@@ -16,7 +16,7 @@ export const up = async (pool: Pool) => {
     CREATE TABLE IF NOT EXISTS profiles_personal (
       id SERIAL PRIMARY KEY,
       profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-      occupation VARCHAR(255) NOT NULL
+      occupation VARCHAR(255)
     );
 
     -- Create profiles_business table
