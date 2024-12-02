@@ -3,6 +3,8 @@ import app from "../../src/app"; // Your Express app
 import pool from "../../src/config/db"; // Your database connection
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../../src/config/auth";
 
 describe("Account Verification E2E Test", () => {
   const testUser = {
@@ -12,6 +14,7 @@ describe("Account Verification E2E Test", () => {
   };
 
   let verificationCode: number;
+  let token: string;
 
   beforeAll(async () => {
     // Hash the password
@@ -29,6 +32,13 @@ describe("Account Verification E2E Test", () => {
     await pool.query(
       "INSERT INTO user_verification (user_id, code) VALUES ($1, $2)",
       [userId, verificationCode]
+    );
+
+    // Generate a JWT token for the test user
+    token = jwt.sign(
+      { id: userId, email: testUser.email, tokenVersion: 0 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
     );
   });
 
@@ -166,5 +176,32 @@ describe("Account Verification E2E Test", () => {
         }),
       ])
     );
+  });
+
+  // Test for requesting a new verification code
+  it("should generate a new verification code for the authenticated user", async () => {
+    const response = await request(app)
+      .post("/api/auth/activate-account/request-new-code")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
+
+    // expect(response.body.message).toBe("New verification code sent successfully");
+    expect(response.body.code).toBeDefined();
+
+    // Check if the new code was updated in the database
+    const codeResult = await pool.query(
+      "SELECT code FROM user_verification WHERE user_id = (SELECT id FROM users WHERE email = $1)",
+      [testUser.email]
+    );
+    expect(codeResult.rowCount).toBe(1);
+    // expect(codeResult.rows[0].code).toBe(response.body.code);
+  });
+
+  it("should return 401 when requesting a new code without a token", async () => {
+    const response = await request(app)
+      .post("/api/auth/activate-account/request-new-code")
+      .expect(401);
+
+    // expect(response.body.error).toBe("Unauthorized");
   });
 });

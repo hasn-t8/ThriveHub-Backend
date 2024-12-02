@@ -2,6 +2,9 @@ import { Router, Request, Response } from "express";
 import { findUserByEmail, activateUser } from "../../models/user";
 import pool from "../../config/db";
 import { check, validationResult } from "express-validator";
+import { verifyToken } from "../../middleware/authenticate";
+import crypto from "crypto";
+import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = Router();
 
@@ -16,6 +19,44 @@ const validateVerification = [
 const validateGetCode = [
   check("email").isEmail().withMessage("Email must be valid"),
 ];
+
+// Route to request a new verification code
+router.post(
+  "/auth/activate-account/request-new-code",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      // Generate a new 4-digit verification code
+      const newCode = crypto.randomInt(1000, 9999);
+
+      // Save the new code to the database
+      await pool.query(
+        `INSERT INTO user_verification (user_id, code)
+         VALUES ($1, $2)
+         ON CONFLICT (user_id)
+         DO UPDATE SET code = $2`,
+        [userId, newCode]
+      );
+
+      res
+        .status(200)
+        .json({
+          message: "New verification code sent successfully",
+          code: newCode,
+        });
+    } catch (error) {
+      console.error("Error requesting new verification code:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 // Verify account route
 router.post(
@@ -232,6 +273,54 @@ router.post(
  *                 error:
  *                   type: string
  *                   example: User not found
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal Server Error
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Account Activation
+ *   description: Endpoints for account activation and verification
+ *
+ * /auth/activate-account/request-new-code:
+ *   post:
+ *     summary: Request a new verification code
+ *     tags: [Account Activation]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: New verification code sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: New verification code sent successfully
+ *                 code:
+ *                   type: integer
+ *                   example: 1234
+ *       401:
+ *         description: 'Unauthorized: Missing or invalid token'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized
  *       500:
  *         description: Internal server error
  *         content:
