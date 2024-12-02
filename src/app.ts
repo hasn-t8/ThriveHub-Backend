@@ -11,9 +11,10 @@ import { seedAdmin } from "./seeds/seed-admin";
 const app: Application = express();
 
 const isProduction = process.env.NODE_ENV === 'production';
-if (!isProduction) {
+// if (!isProduction) {
   app.use(cors());
-} 
+// } 
+
 
 // Middleware
 app.use(express.json());

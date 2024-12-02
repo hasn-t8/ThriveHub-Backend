@@ -32,6 +32,10 @@ router.post(
 
     const { email, password } = req.body;
 
+    console.log('email', email);
+    console.log('password', password);
+    
+    
     try {
       const user = await findUserByEmail(email);
       if (!user) {
@@ -41,12 +45,15 @@ router.post(
       }
 
       if (!user.is_active) {
+        console.log('User is inactive');
+        
         res.status(403).json({ error: "Forbidden: User is inactive" });
         return;
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
+        console.log('Invalid credentials');        
         res.status(401).json({ error: "Unauthorized: Invalid credentials" });
         return;
       }
@@ -59,6 +66,8 @@ router.post(
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
+      console.log('Login successful', token);
+      
       res.status(200).json({ message: "Login successful", token });
       return;
     } catch (error) {
