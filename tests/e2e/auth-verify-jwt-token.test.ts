@@ -29,7 +29,7 @@ describe("JWT Token Verification E2E Test", () => {
       .send({ token: validToken })
       .expect(200);
 
-    expect(response.body.message).toBe("token is valid");
+    expect(response.body.message).toBe("Token is valid");
     // expect(response.body.decoded).toMatchObject({
     //   id: 1,
     //   email: "testuser@example.com",

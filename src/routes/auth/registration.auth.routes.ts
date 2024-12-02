@@ -49,8 +49,8 @@ router.post(
       // Assign user types
       await assignUserTypes(userId, types);
 
-      // Generate a 6-digit verification code
-      const verificationCode = crypto.randomInt(100000, 999999);
+      // Generate a 4-digit verification code
+      const verificationCode = crypto.randomInt(1000, 9999);
 
       // Save the verification code
       await saveVerificationCode(userId, verificationCode);

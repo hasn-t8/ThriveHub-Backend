@@ -9,8 +9,8 @@ const router = Router();
 const validateVerification = [
   check("email").isEmail().withMessage("Email must be valid"),
   check("code")
-    .isInt({ min: 100000, max: 999999 })
-    .withMessage("Code must be a 6-digit number"),
+    .isInt({ min: 1000, max: 9999 })
+    .withMessage("Code must be a 4-digit number"),
 ];
 
 const validateGetCode = [
@@ -132,7 +132,7 @@ router.post(
  *                 example: user@example.com
  *               code:
  *                 type: integer
- *                 description: The 6-digit verification code.
+ *                 description: The 4-digit verification code.
  *                 example: 123456
  *     responses:
  *       200:

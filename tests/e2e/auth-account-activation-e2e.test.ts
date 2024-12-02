@@ -25,7 +25,7 @@ describe("Account Verification E2E Test", () => {
     const userId = userResult.rows[0].id;
 
     // Generate and save the verification code
-    verificationCode = crypto.randomInt(100000, 999999);
+    verificationCode = crypto.randomInt(1000, 9999);
     await pool.query(
       "INSERT INTO user_verification (user_id, code) VALUES ($1, $2)",
       [userId, verificationCode]
@@ -86,7 +86,7 @@ describe("Account Verification E2E Test", () => {
       .post("/api/auth/activate-account/verify")
       .send({
         email: testUser.email,
-        code: 123456, // Invalid code
+        code: 1234, // Invalid code
       })
       .expect(404);
 
@@ -117,7 +117,7 @@ describe("Account Verification E2E Test", () => {
     expect(response.body.errors).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          msg: "Code must be a 6-digit number",
+          msg: "Code must be a 4-digit number",
         }),
       ])
     );
