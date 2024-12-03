@@ -91,9 +91,9 @@ export const createBusinessProfile = async (
 
 
 export const getCompleteProfileByUserId = async (userId: number) => {
-  const profiles = await pool.query(
-    `
+  const query = `
     SELECT 
+      u.full_name, -- Ensure full_name always comes from users table
       p.id AS profile_id, 
       p.profile_type, 
       pp.occupation, 
@@ -111,19 +111,29 @@ export const getCompleteProfileByUserId = async (userId: number) => {
       pb.category, 
       pb.logo_url, 
       pb.about_business, 
-      pb.work_email_verified,
-      u.full_name
-    FROM profiles p
+      pb.work_email_verified
+    FROM users u
+    LEFT JOIN profiles p ON u.id = p.user_id
     LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
     LEFT JOIN profiles_business pb ON p.id = pb.profile_id
-    LEFT JOIN users u ON p.user_id = u.id
-    WHERE p.user_id = $1
-    `,
-    [userId]
-  );
+    WHERE u.id = $1
+  `;
 
-  return profiles.rows;
+  const result = await pool.query(query, [userId]);
+
+  // If no rows are returned, return just the user's full_name
+  if (result.rows.length === 0) {
+    const fallbackResult = await pool.query(
+      `SELECT full_name FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    return fallbackResult.rows[0] || null;
+  }
+
+  return result.rows;
 };
+
 
 
 export const createOrUpdatePersonalProfile = async (userId: number, data: any) => {
