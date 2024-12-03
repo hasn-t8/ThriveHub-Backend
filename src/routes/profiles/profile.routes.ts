@@ -80,3 +80,149 @@ router.post(
 );
 
 export default router;
+
+/**
+ * @swagger
+ * tags:
+ *   name: Profiles
+ *   description: Endpoints for managing user profiles
+ *
+ * /profiles:
+ *   get:
+ *     summary: Get all profiles for the authenticated user
+ *     tags: [Profiles]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profiles retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   profile_type:
+ *                     type: string
+ *                     description: The type of the profile (personal or business)
+ *                   occupation:
+ *                     type: string
+ *                     description: The occupation of the user (personal profile)
+ *                   date_of_birth:
+ *                     type: string
+ *                     format: date
+ *                     description: The date of birth of the user (personal profile)
+ *                   phone_number:
+ *                     type: string
+ *                     description: The phone number of the user (personal profile)
+ *                   address_line_1:
+ *                     type: string
+ *                     description: The first line of the address (personal profile)
+ *                   address_line_2:
+ *                     type: string
+ *                     description: The second line of the address (personal profile)
+ *                   address_city:
+ *                     type: string
+ *                     description: The city of the address (personal profile)
+ *                   address_zip_code:
+ *                     type: string
+ *                     description: The zip code of the address (personal profile)
+ *                   img_profile_url:
+ *                     type: string
+ *                     description: The profile image URL (personal profile)
+ *                   business_website_url:
+ *                     type: string
+ *                     description: The website URL of the business (business profile)
+ *                   org_name:
+ *                     type: string
+ *                     description: The name of the organization (business profile)
+ *                   job_title:
+ *                     type: string
+ *                     description: The job title of the user (business profile)
+ *                   work_email:
+ *                     type: string
+ *                     description: The work email address of the user (business profile)
+ *                   category:
+ *                     type: string
+ *                     description: The category of the business (business profile)
+ *                   logo_url:
+ *                     type: string
+ *                     description: The logo URL of the business (business profile)
+ *                   about_business:
+ *                     type: string
+ *                     description: A description of the business (business profile)
+ *                   work_email_verified:
+ *                     type: boolean
+ *                     description: Whether the work email is verified (business profile)
+ *       400:
+ *         description: User ID is required
+ *       404:
+ *         description: Profiles not found
+ *       500:
+ *         description: Internal Server Error
+ * 
+ *   post:
+ *     summary: Create or update a profile for the authenticated user
+ *     tags: [Profiles]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - profileType
+ *               - profileData
+ *             properties:
+ *               profileType:
+ *                 type: string
+ *                 enum: [personal, business]
+ *                 description: The type of profile to create or update.
+ *               profileData:
+ *                 type: object
+ *                 description: The profile data to be created or updated.
+ *                 additionalProperties: true
+ *                 example:
+ *                   occupation: "Software Engineer"
+ *                   date_of_birth: "1990-01-01"
+ *                   phone_number: "1234567890"
+ *                   address_line_1: "123 Main St"
+ *                   address_line_2: "Apt 4B"
+ *                   address_city: "Techville"
+ *                   address_zip_code: "12345"
+ *                   img_profile_url: "https://example.com/profile.jpg"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message
+ *                 profile:
+ *                   type: object
+ *                   description: The updated profile data
+ *       400:
+ *         description: Validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       msg:
+ *                         type: string
+ *                         description: Error message
+ *       500:
+ *         description: Internal Server Error
+ */
