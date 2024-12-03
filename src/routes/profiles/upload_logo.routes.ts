@@ -96,3 +96,79 @@ router.post(
 );
 
 export default router;
+
+
+/**
+ * @swagger
+ * /upload-logo:
+ *   post:
+ *     summary: Upload a logo image for a business profile
+ *     tags:
+ *       - Logo
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: The logo image file to upload.
+ *               businessProfileId:
+ *                 type: integer
+ *                 description: The ID of the business profile to associate the logo with.
+ *             required:
+ *               - logo
+ *               - businessProfileId
+ *     responses:
+ *       200:
+ *         description: Logo uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logo uploaded successfully
+ *                 url:
+ *                   type: string
+ *                   example: https://your-bucket-name.s3.your-region.amazonaws.com/logos/123/logo.png
+ *                 key:
+ *                   type: string
+ *                   example: logos/123/logo.png
+ *       400:
+ *         description: Bad Request - Missing or invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Business profile ID is required
+ *       403:
+ *         description: Forbidden - User does not own the business profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: You do not own this business profile
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Failed to upload logo
+ */
