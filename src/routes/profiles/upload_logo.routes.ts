@@ -1,7 +1,11 @@
 import express, { Request, Response } from "express";
-import AWS from "aws-sdk";
 import multer from "multer";
-import { v4 as uuidv4 } from "uuid";
+import AWS from "aws-sdk";
+import path from "path";
+import { verifyToken } from "../../middleware/authenticate";
+import { validateBusinessProfileOwnership } from "../../models/profile";
+import { AuthenticatedRequest } from "../../types/authenticated-request";
+
 
 const router = express.Router();
 
@@ -17,9 +21,14 @@ const upload = multer({
   storage: multer.memoryStorage(), // Store files in memory for direct upload to S3
   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
+    // Validate file extensions
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".gif"];
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+
+    if (!allowedExtensions.includes(fileExtension)) {
       return cb(null, false);
     }
+
     cb(null, true);
   },
 });
@@ -27,16 +36,42 @@ const upload = multer({
 // Route for uploading logo images
 router.post(
   "/upload-logo",
+  verifyToken,
   upload.single("logo"),
-  async (req: Request, res: Response): Promise<void> => {
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       if (!req.file) {
         res.status(400).json({ error: "No file uploaded" });
         return;
       }
+      const userId = req.user?.id;
+      const { businessProfileId } = req.body;
+
+      if (!userId) {
+        res.status(400).json({ error: "Not authorized" });
+        return;
+      }
+
+      if (!businessProfileId) {
+        res.status(400).json({ error: "Business profile ID is required" });
+        return;
+      }
+
+      // Validate ownership of the business profile
+      const isValidProfile = await validateBusinessProfileOwnership(userId, parseInt(businessProfileId, 10));
+      if (!isValidProfile) {
+        res.status(403).json({ error: "You do not own this business profile" });
+        return;
+      }
 
       const file = req.file;
-      const fileKey = `logos/${uuidv4()}-${file.originalname}`;
+
+      // Use the businessProfileId directly as the folder name
+      const folderPath = `logos/${businessProfileId}/`;
+
+      // Construct the file key: logo + file extension
+      const fileExtension = path.extname(file.originalname).toLowerCase();
+      const fileKey = `${folderPath}logo${fileExtension}`;
 
       const params = {
         Bucket: process.env.S3_BUCKET_NAME!,
@@ -55,7 +90,7 @@ router.post(
       });
     } catch (error) {
       console.error("Error uploading logo:", error);
-      res.status(500).json({ error: "Failed to upload logo" });
+      res.status(500).json({ error: (error as any)?.message || "Failed to upload logo" });
     }
   }
 );

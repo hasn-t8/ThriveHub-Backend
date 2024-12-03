@@ -61,7 +61,7 @@ router.post(
     }
 
     const userId = req.user?.id;
-    const { profileType, profileData, fullName } = req.body;
+    const { profileType, profileData, fullName, business_profile_id } = req.body;
 
     if (userId === undefined) {
       res.status(400).json({ error: "User ID is required" });
@@ -70,12 +70,15 @@ router.post(
 
     try {
       if (profileType === "personal") {
+
         const personalProfile = await createOrUpdatePersonalProfile(userId, profileData);
         if (fullName && fullName.trim() !== "") {
           await updateUserFullName(userId, fullName);
         }
         res.status(200).json({ message: "Personal profile updated", profile: personalProfile });
+        
       } else if (profileType === "business") {
+
         const businessProfile = await createOrUpdateBusinessProfile(userId, profileData);
         res.status(200).json({ message: "Business profile updated", profile: businessProfile });
       }

@@ -8,6 +8,34 @@ export interface Profile {
   updated_at: Date;
 }
 
+/**
+ * Validates if the business profile ID belongs to the user.
+ * @param userId The user ID
+ * @param businessProfileId The business profile ID
+ * @returns The organization name if valid, null otherwise
+ */
+export async function validateBusinessProfileOwnership(userId: number, businessProfileId: number): Promise<string | null> {
+  const query = `
+    SELECT pb.id
+    FROM profiles_business pb
+    JOIN profiles p ON pb.profile_id = p.id
+    WHERE p.user_id = $1 AND pb.id = $2
+    LIMIT 1;
+  `;
+
+  try {
+    const result = await pool.query(query, [userId, businessProfileId]);
+    console.log('result', result);
+
+    return result.rows.length > 0 ? result.rows[0].id : null; // Return the ID if found
+  } catch (error) {
+    console.error("Error validating business profile ownership:", error);
+    throw error;
+  }
+}
+
+
+
 /** --------------------- Create Profile --------------------- */
 export const createProfile = async (
   userId: number,
@@ -152,15 +180,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
       address_line_2: null,
       address_city: null,
       address_zip_code: null,
-      img_profile_url: null,
-      business_website_url: null,
-      org_name: null,
-      job_title: null,
-      work_email: null,
-      category: null,
-      logo_url: null,
-      about_business: null,
-      work_email_verified: null,
+      img_profile_url: null
     });
   }
 
@@ -178,7 +198,7 @@ export const createOrUpdatePersonalProfile = async (
   try {
     await client.query("BEGIN");
 
-    // Check if profile exists
+    // Check if the profile exists
     const profileResult = await client.query(
       `
       SELECT id FROM profiles 
@@ -188,18 +208,20 @@ export const createOrUpdatePersonalProfile = async (
     );
 
     let profileId;
+    let personalProfileId;
 
     if (profileResult.rowCount && profileResult.rowCount > 0) {
       profileId = profileResult.rows[0].id;
 
-      // Update profiles_personal table
-      await client.query(
+      // Update profiles_personal table and return the personal_profile_id
+      const personalProfileResult = await client.query(
         `
         UPDATE profiles_personal 
         SET occupation = $1, date_of_birth = $2, phone_number = $3, 
             address_line_1 = $4, address_line_2 = $5, address_city = $6, 
             address_zip_code = $7, img_profile_url = $8
         WHERE profile_id = $9
+        RETURNING id
         `,
         [
           data.occupation,
@@ -213,6 +235,8 @@ export const createOrUpdatePersonalProfile = async (
           profileId,
         ]
       );
+
+      personalProfileId = personalProfileResult.rows[0].id;
     } else {
       // Create new profile and profiles_personal entry
       const newProfileResult = await client.query(
@@ -225,12 +249,13 @@ export const createOrUpdatePersonalProfile = async (
 
       profileId = newProfileResult.rows[0].id;
 
-      await client.query(
+      const newPersonalProfileResult = await client.query(
         `
         INSERT INTO profiles_personal (profile_id, occupation, date_of_birth, phone_number, 
                                        address_line_1, address_line_2, address_city, 
                                        address_zip_code, img_profile_url)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
         `,
         [
           profileId,
@@ -244,10 +269,12 @@ export const createOrUpdatePersonalProfile = async (
           data.img_profile_url,
         ]
       );
+
+      personalProfileId = newPersonalProfileResult.rows[0].id;
     }
 
     await client.query("COMMIT");
-    return { profileId };
+    return { profileId, personalProfileId };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -264,28 +291,19 @@ export const createOrUpdateBusinessProfile = async (
   try {
     await client.query("BEGIN");
 
-    // Check if profile exists
-    const profileResult = await client.query(
-      `
-      SELECT id FROM profiles 
-      WHERE user_id = $1 AND profile_type = 'business'
-      `,
-      [userId]
-    );
-
     let profileId;
+    let businessProfileId = data.business_profile_id; // Assume it's passed in `data`
 
-    if (profileResult.rowCount && profileResult.rowCount > 0) {
-      profileId = profileResult.rows[0].id;
-
-      // Update profiles_business table
-      await client.query(
+    if (businessProfileId) {
+      // Update existing business profile
+      const businessProfileResult = await client.query(
         `
         UPDATE profiles_business 
         SET business_website_url = $1, org_name = $2, job_title = $3, 
             work_email = $4, category = $5, logo_url = $6, about_business = $7, 
             work_email_verified = $8
-        WHERE profile_id = $9
+        WHERE id = $9
+        RETURNING profile_id, id
         `,
         [
           data.business_website_url,
@@ -296,27 +314,47 @@ export const createOrUpdateBusinessProfile = async (
           data.logo_url,
           data.about_business,
           data.work_email_verified || false,
-          profileId,
+          businessProfileId,
         ]
       );
+
+      if (businessProfileResult.rowCount === 0) {
+        throw new Error("Invalid business_profile_id");
+      }
+
+      profileId = businessProfileResult.rows[0].profile_id;
+      businessProfileId = businessProfileResult.rows[0].id;
     } else {
       // Create new profile and profiles_business entry
-      const newProfileResult = await client.query(
+      const profileResult = await client.query(
         `
-        INSERT INTO profiles (user_id, profile_type) 
-        VALUES ($1, 'business') RETURNING id
+        SELECT id FROM profiles 
+        WHERE user_id = $1 AND profile_type = 'business'
         `,
         [userId]
       );
 
-      profileId = newProfileResult.rows[0].id;
+      if (profileResult.rowCount && profileResult.rowCount > 0) {
+        profileId = profileResult.rows[0].id;
+      } else {
+        const newProfileResult = await client.query(
+          `
+          INSERT INTO profiles (user_id, profile_type) 
+          VALUES ($1, 'business') RETURNING id
+          `,
+          [userId]
+        );
 
-      await client.query(
+        profileId = newProfileResult.rows[0].id;
+      }
+
+      const newBusinessProfileResult = await client.query(
         `
         INSERT INTO profiles_business (profile_id, business_website_url, org_name, 
                                        job_title, work_email, category, logo_url, 
                                        about_business, work_email_verified)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
         `,
         [
           profileId,
@@ -330,10 +368,12 @@ export const createOrUpdateBusinessProfile = async (
           data.work_email_verified || false,
         ]
       );
+
+      businessProfileId = newBusinessProfileResult.rows[0].id;
     }
 
     await client.query("COMMIT");
-    return { profileId, ...data };
+    return { profileId, businessProfileId };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -341,4 +381,6 @@ export const createOrUpdateBusinessProfile = async (
     client.release();
   }
 };
+
+
 
