@@ -247,7 +247,7 @@ export const createOrUpdatePersonalProfile = async (
     }
 
     await client.query("COMMIT");
-    return { profileId, ...data };
+    return { profileId };
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

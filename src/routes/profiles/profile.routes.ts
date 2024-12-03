@@ -71,17 +71,13 @@ router.post(
     try {
       if (profileType === "personal") {
         const personalProfile = await createOrUpdatePersonalProfile(userId, profileData);
-        res
-          .status(200)
-          .json({ message: "Personal profile updated successfully", profile: personalProfile });
         if (fullName && fullName.trim() !== "") {
           await updateUserFullName(userId, fullName);
         }
+        res.status(200).json({ message: "Personal profile updated", profile: personalProfile });
       } else if (profileType === "business") {
         const businessProfile = await createOrUpdateBusinessProfile(userId, profileData);
-        res
-          .status(200)
-          .json({ message: "Business profile updated successfully", profile: businessProfile });
+        res.status(200).json({ message: "Business profile updated", profile: businessProfile });
       }
     } catch (error) {
       console.error("Error updating profile:", error);
