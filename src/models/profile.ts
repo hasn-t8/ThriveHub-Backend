@@ -89,7 +89,6 @@ export const createBusinessProfile = async (
   );
 };
 
-
 export const getCompleteProfileByUserId = async (userId: number) => {
   const query = `
     SELECT 
@@ -132,18 +131,20 @@ export const getCompleteProfileByUserId = async (userId: number) => {
     return fallbackResult.rows[0] || null;
   }
 
-  const profiles = result.rows;
+  let profiles = result.rows;
 
   // Check if there is no personal profile and add a default one
-  const hasPersonalProfile = profiles.some(profile => profile.profile_type === 'personal');
+  const hasPersonalProfile = profiles.some(
+    (profile) => profile.profile_type === "personal"
+  );
   // const hasBusinessProfile = profiles.some(profile => profile.profile_type === 'business');
 
   if (!hasPersonalProfile) {
     profiles.push({
       full_name: profiles[0]?.full_name || null, // Use user name if available
-      email: profiles[0]?.email || null,        // Use user email if available
+      email: profiles[0]?.email || null, // Use user email if available
       profile_id: null,
-      profile_type: 'personal',
+      profile_type: "personal",
       occupation: null,
       date_of_birth: null,
       phone_number: null,
@@ -159,16 +160,20 @@ export const getCompleteProfileByUserId = async (userId: number) => {
       category: null,
       logo_url: null,
       about_business: null,
-      work_email_verified: null
+      work_email_verified: null,
     });
   }
 
-  return result.rows;
+  // Remove rows with profile_type null
+  profiles = profiles.filter((profile) => profile.profile_type !== null);
+
+  return profiles;
 };
 
-
-
-export const createOrUpdatePersonalProfile = async (userId: number, data: any) => {
+export const createOrUpdatePersonalProfile = async (
+  userId: number,
+  data: any
+) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -251,7 +256,10 @@ export const createOrUpdatePersonalProfile = async (userId: number, data: any) =
   }
 };
 
-export const createOrUpdateBusinessProfile = async (userId: number, data: any) => {
+export const createOrUpdateBusinessProfile = async (
+  userId: number,
+  data: any
+) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");

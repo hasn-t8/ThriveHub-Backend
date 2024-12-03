@@ -55,7 +55,7 @@ describe("Profiles E2E Test", () => {
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
 
-      expect(response.body).toHaveLength(2);
+      expect(response.body).toHaveLength(1);
     });
 
   it("should create and fetch a personal profile", async () => {
