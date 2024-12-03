@@ -132,6 +132,37 @@ export const getCompleteProfileByUserId = async (userId: number) => {
     return fallbackResult.rows[0] || null;
   }
 
+  const profiles = result.rows;
+
+  // Check if there is no personal profile and add a default one
+  const hasPersonalProfile = profiles.some(profile => profile.profile_type === 'personal');
+  // const hasBusinessProfile = profiles.some(profile => profile.profile_type === 'business');
+
+  if (!hasPersonalProfile) {
+    profiles.push({
+      full_name: profiles[0]?.full_name || null, // Use user name if available
+      email: profiles[0]?.email || null,        // Use user email if available
+      profile_id: null,
+      profile_type: 'personal',
+      occupation: null,
+      date_of_birth: null,
+      phone_number: null,
+      address_line_1: null,
+      address_line_2: null,
+      address_city: null,
+      address_zip_code: null,
+      img_profile_url: null,
+      business_website_url: null,
+      org_name: null,
+      job_title: null,
+      work_email: null,
+      category: null,
+      logo_url: null,
+      about_business: null,
+      work_email_verified: null
+    });
+  }
+
   return result.rows;
 };
 

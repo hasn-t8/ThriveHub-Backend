@@ -55,8 +55,8 @@ describe("Profiles E2E Test", () => {
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
 
-    expect(response.body).toEqual([]);
-  });
+      expect(response.body).toHaveLength(2);
+    });
 
   it("should create and fetch a personal profile", async () => {
     const personalPayload = {
@@ -130,7 +130,9 @@ describe("Profiles E2E Test", () => {
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
 
-    expect(fetchResponse.body).toHaveLength(1);
+    expect(fetchResponse.body).toHaveLength(2);
+    console.log('fetchResponse.body', fetchResponse.body);
+    
     const businessProfile = fetchResponse.body[0];
     expect(businessProfile.profile_type).toBe("business");
     expect(businessProfile.org_name).toBe(businessPayload.profileData.org_name);
