@@ -11,6 +11,7 @@ import forgotPasswordChangeRoute from './auth/forgot-password-change.auth.routes
 import changePasswordRoute from './auth/change-password.auth.routes';
 import createProfile from './profiles/profile.routes';
 import analyticsBusinessProfileViews from './analytics/business.views.routes';
+import uploadLog from './profiles/upload_logo.routes';
 
 
 
@@ -27,6 +28,7 @@ router.use(forgotPasswordChangeRoute);
 router.use(changePasswordRoute);
 router.use(createProfile);
 router.use(analyticsBusinessProfileViews);
+router.use(uploadLog);
 
 /** ---------------------  user routes --------------------- */
 
