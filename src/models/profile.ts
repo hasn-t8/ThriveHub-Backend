@@ -93,14 +93,30 @@ export const createBusinessProfile = async (
 export const getCompleteProfileByUserId = async (userId: number) => {
   const profiles = await pool.query(
     `
-    SELECT p.id AS profile_id, p.profile_type, 
-           pp.occupation, pp.date_of_birth, pp.phone_number, pp.address_line_1, 
-           pp.address_line_2, pp.address_city, pp.address_zip_code, pp.img_profile_url,
-           pb.business_website_url, pb.org_name, pb.job_title, pb.work_email, 
-           pb.category, pb.logo_url, pb.about_business, pb.work_email_verified
+    SELECT 
+      p.id AS profile_id, 
+      p.profile_type, 
+      pp.occupation, 
+      pp.date_of_birth, 
+      pp.phone_number, 
+      pp.address_line_1, 
+      pp.address_line_2, 
+      pp.address_city, 
+      pp.address_zip_code, 
+      pp.img_profile_url,
+      pb.business_website_url, 
+      pb.org_name, 
+      pb.job_title, 
+      pb.work_email, 
+      pb.category, 
+      pb.logo_url, 
+      pb.about_business, 
+      pb.work_email_verified,
+      u.full_name
     FROM profiles p
     LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
     LEFT JOIN profiles_business pb ON p.id = pb.profile_id
+    LEFT JOIN users u ON p.user_id = u.id
     WHERE p.user_id = $1
     `,
     [userId]
@@ -108,6 +124,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
 
   return profiles.rows;
 };
+
 
 export const createOrUpdatePersonalProfile = async (userId: number, data: any) => {
   const client = await pool.connect();
