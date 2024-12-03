@@ -93,7 +93,8 @@ export const createBusinessProfile = async (
 export const getCompleteProfileByUserId = async (userId: number) => {
   const query = `
     SELECT 
-      u.full_name, -- Ensure full_name always comes from users table
+      u.full_name,
+      u.email,
       p.id AS profile_id, 
       p.profile_type, 
       pp.occupation, 
