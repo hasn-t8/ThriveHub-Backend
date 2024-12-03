@@ -119,3 +119,25 @@ export const updatePassword = async (
     userId,
   ]);
 };
+
+
+/**
+ * Updates the full_name in the users table for a given user ID.
+ * @param userId The user ID
+ * @param fullName The new full name
+ */
+export async function updateUserFullName(userId: number, fullName: string): Promise<void> {
+  const query = `
+    UPDATE users
+    SET full_name = $1
+    WHERE id = $2
+  `;
+  
+  try {
+    await pool.query(query, [fullName, userId]);
+    console.log(`User full name updated to: ${fullName} for userId: ${userId}`);
+  } catch (error) {
+    console.error("Error updating user full name:", error);
+    throw error;
+  }
+}

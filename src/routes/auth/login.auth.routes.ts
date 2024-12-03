@@ -31,10 +31,6 @@ router.post(
     }
 
     const { email, password } = req.body;
-
-    console.log('email', email);
-    console.log('password', password);
-    
     
     try {
       const user = await findUserByEmail(email);

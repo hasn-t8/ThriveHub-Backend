@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
@@ -8,11 +8,15 @@ import {
   createOrUpdateBusinessProfile,
 } from "../../models/profile";
 
+import { updateUserFullName } from "../../models/user";
+
 const router = Router();
 
 // Validation middleware for profile updates
 const validateProfile = [
-  check("profileType").isIn(["personal", "business"]).withMessage("Profile type must be 'personal' or 'business'"),
+  check("profileType")
+    .isIn(["personal", "business"])
+    .withMessage("Profile type must be 'personal' or 'business'"),
   check("profileData").isObject().withMessage("Profile data must be an object"),
 ];
 
@@ -57,7 +61,7 @@ router.post(
     }
 
     const userId = req.user?.id;
-    const { profileType, profileData } = req.body;
+    const { profileType, profileData, fullName } = req.body;
 
     if (userId === undefined) {
       res.status(400).json({ error: "User ID is required" });
@@ -67,10 +71,17 @@ router.post(
     try {
       if (profileType === "personal") {
         const personalProfile = await createOrUpdatePersonalProfile(userId, profileData);
-        res.status(200).json({ message: "Personal profile updated successfully", profile: personalProfile });
+        res
+          .status(200)
+          .json({ message: "Personal profile updated successfully", profile: personalProfile });
+        if (fullName && fullName.trim() !== "") {
+          await updateUserFullName(userId, fullName);
+        }
       } else if (profileType === "business") {
         const businessProfile = await createOrUpdateBusinessProfile(userId, profileData);
-        res.status(200).json({ message: "Business profile updated successfully", profile: businessProfile });
+        res
+          .status(200)
+          .json({ message: "Business profile updated successfully", profile: businessProfile });
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -161,7 +172,7 @@ export default router;
  *         description: Profiles not found
  *       500:
  *         description: Internal Server Error
- * 
+ *
  *   post:
  *     summary: Create or update a profile for the authenticated user
  *     tags: [Profiles]
