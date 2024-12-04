@@ -206,7 +206,7 @@ export default router;
  *                   img_profile_url: "https://example.com/profile.jpg"
  *     responses:
  *       200:
- *         description: Profile updated successfully
+ *         description: Profile updated
  *         content:
  *           application/json:
  *             schema:

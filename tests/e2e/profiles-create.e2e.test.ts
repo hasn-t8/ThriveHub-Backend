@@ -81,7 +81,7 @@ describe("Profiles E2E Test", () => {
       .expect(200);
 
     expect(createResponse.body.message).toBe(
-      "Personal profile updated successfully"
+      "Personal profile updated"
     );
 
     // Fetch the personal profile
@@ -121,7 +121,7 @@ describe("Profiles E2E Test", () => {
       .expect(200);
 
     expect(createResponse.body.message).toBe(
-      "Business profile updated successfully"
+      "Business profile updated"
     );
 
     // Fetch the business profile
@@ -185,7 +185,7 @@ describe("Profiles E2E Test", () => {
       .expect(200);
 
     expect(createResponse.body.message).toBe(
-      "Personal profile updated successfully"
+      "Personal profile updated"
     );
 
     // Step 2: Verify the personal profile in the database
@@ -245,7 +245,7 @@ describe("Profiles E2E Test", () => {
       .expect(200);
 
     expect(updateResponse.body.message).toBe(
-      "Personal profile updated successfully"
+      "Personal profile updated"
     );
 
     // Step 4: Verify the updated personal profile

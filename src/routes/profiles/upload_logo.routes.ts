@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import multer from "multer";
 import AWS from "aws-sdk";
 import path from "path";
