@@ -21,3 +21,15 @@ api-dev.app.thrivehub.ai {
         on_demand
     }
 }
+
+thrivehub.ai {
+    reverse_proxy th_ssr_app:4000
+    encode gzip
+    log {
+        output stdout
+        format json
+    }
+    tls {
+        on_demand
+    }
+}
