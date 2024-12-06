@@ -9,3 +9,15 @@ th-api.ebsycloud.com {
         on_demand
     }
 }
+
+api.thrivehub.ai {
+    reverse_proxy api_server:3000
+    encode gzip
+    log {
+        output stdout
+        format json
+    }
+    tls {
+        on_demand
+    }
+}
