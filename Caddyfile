@@ -10,7 +10,7 @@ th-api.ebsycloud.com {
     }
 }
 
-api.thrivehub.ai {
+api-dev.app.thrivehub.ai {
     reverse_proxy api_server:3000
     encode gzip
     log {
