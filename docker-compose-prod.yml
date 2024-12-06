@@ -8,6 +8,7 @@ services:
     env_file: .env
     networks:
       - th_app_network
+      - ssr_network
     ports:
       - "80:80"
       - "443:443"
@@ -17,6 +18,18 @@ services:
       - ./docker_data/caddy_config:/config
     depends_on:
       - api_server
+      - th_ssr_app
+
+  th_ssr_app:
+    image: th-ssr-app
+    container_name: th-ssr-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - ssr_network
+    environment:
+      NODE_ENV: production
 
   api_server:
     build:
@@ -66,4 +79,6 @@ services:
 
 networks:
   th_app_network:
+    driver: bridge
+  ssr_network:
     driver: bridge
