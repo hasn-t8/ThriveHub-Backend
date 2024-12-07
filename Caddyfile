@@ -23,7 +23,7 @@ api-dev.app.thrivehub.ai {
 }
 
 thrivehub.ai {
-    reverse_proxy th_ssr_app:4000
+    reverse_proxy th_ssr_app:8000
     encode gzip
     log {
         output stdout

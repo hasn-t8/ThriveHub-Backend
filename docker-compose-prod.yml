@@ -17,7 +17,7 @@ services:
       - ./docker_data/caddy_config:/config
 
   api_server:
-    build:
+    image: 
       context: .
       dockerfile: Dockerfile
     ports:
