@@ -41,7 +41,7 @@ services:
       npm run migrate:prod &&
       node dist/server.js"
     networks:
-      - th_api_network
+      - th_app_shared_network
 
   postgres:
     image: postgres:latest
@@ -60,7 +60,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - th_api_network
+      - th_app_shared_network
 
   # th_ssr_app:
   #   container_name: th_ssr_app
@@ -72,6 +72,6 @@ services:
   #   networks:
   #     - th_app_network
 
-networks:
-  th_api_network:
-    driver: bridge
+# networks:
+#   th_app_shared_network:
+#     driver: bridge
