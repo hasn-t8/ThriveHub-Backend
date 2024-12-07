@@ -60,7 +60,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - th_app_network
+      - th_api_network
 
   # th_ssr_app:
   #   container_name: th_ssr_app
