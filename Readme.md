@@ -1,9 +1,12 @@
-# Quickstart
-1. Run Postgres DB   
-2. `` npm run migrate:up``
-3. `` npm run seed ``
+# Development  
+1. Run Postgres DB with `docker-compose up -d`   
+2. ` npm install `
+3. `npm run migrate:up`
+4. ` npm run seed `
+5. ` npm run dev`
 
-# Deployment
+----- 
+# ONLY For Deployment 
 ### Check the .env
 ### Build the image and run the container
 ``` docker-compose -f docker-compose-prod.yml up --build -d --remove-orphans ``` 
