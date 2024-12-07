@@ -1,21 +1,6 @@
 version: "3.9"
 
 services:
-  # caddy:
-  #   container_name: caddy
-  #   image: caddy:latest
-  #   restart: unless-stopped
-  #   env_file: .env
-  #   networks:
-  #     - th_app_network
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - ./docker_data/caddy_data:/data
-  #     - ./docker_data/caddy_config:/config
-
   api_server:
     build: 
       context: .
@@ -61,16 +46,6 @@ services:
       retries: 5
     networks:
       - th_app_shared_network
-
-  # th_ssr_app:
-  #   container_name: th_ssr_app
-  #   image: web_app_th_ssr_app
-  #   environment:
-  #     NODE_ENV: production
-  #   ports:
-  #     - "4000:8000"
-  #   networks:
-  #     - th_app_network
 
 networks:
   th_app_shared_network:
