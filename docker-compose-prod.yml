@@ -72,6 +72,6 @@ services:
   #   networks:
   #     - th_app_network
 
-# networks:
-#   th_app_shared_network:
-#     driver: bridge
+networks:
+  th_app_shared_network:
+    external: true
