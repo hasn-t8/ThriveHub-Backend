@@ -141,3 +141,28 @@ export async function updateUserFullName(userId: number, fullName: string): Prom
     throw error;
   }
 }
+
+/** --------------------- Delete User --------------------- */
+export const deleteUser = async (userId: number): Promise<void> => {
+  try {
+    const result = await pool.query("DELETE FROM users WHERE id = $1", [
+      userId,
+    ]);
+    
+    if (result.rowCount === 0) {
+      throw new Error(`User with ID ${userId} not found.`);
+    }
+
+    console.log(`User with ID ${userId} has been deleted.`);
+  } catch (error) {
+    if (error instanceof Error) {
+      // Handle the error with a meaningful message
+      console.error(`Error deleting user with ID ${userId}:`, error.message);
+      throw new Error(`Error deleting user: ${error.message}`);
+    } else {
+      // Handle unexpected errors
+      console.error(`Unexpected error deleting user with ID ${userId}:`, error);
+      throw new Error("An unexpected error occurred while deleting the user.");
+    }
+  }
+};

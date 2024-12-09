@@ -12,7 +12,7 @@ import changePasswordRoute from './auth/change-password.auth.routes';
 import createProfile from './profiles/profile.routes';
 import analyticsBusinessProfileViews from './analytics/business.views.routes';
 import uploadLog from './profiles/upload_logo.routes';
-
+import deleteRoute from "./auth/delete-auth-routes";
 
 
 const router = Router();
@@ -29,6 +29,7 @@ router.use(changePasswordRoute);
 router.use(createProfile);
 router.use(analyticsBusinessProfileViews);
 router.use(uploadLog);
+router.use(deleteRoute);
 
 /** ---------------------  user routes --------------------- */
 
