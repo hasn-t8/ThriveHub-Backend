@@ -4,15 +4,15 @@ services:
     image: postgres:latest
     container_name: my-postgres-db
     ports:
-      - "${DB_PORT}:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - ./docker_data/pg_data_3:/var/lib/postgresql/data
+      - ./docker_data/pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -h localhost -d ${DB_NAME} || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
