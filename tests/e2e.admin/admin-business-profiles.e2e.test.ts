@@ -21,12 +21,12 @@ beforeAll(async () => {
   const hashedPasswordAdmin = await bcrypt.hash("adminpassword", 10);
   const adminResult = await pool.query(
     "INSERT INTO users (email, password, is_active, token_version) VALUES ($1, $2, $3, $4) RETURNING id",
-    ["admin@example.com", hashedPasswordAdmin, true, 0]
+    ["admin007@example.com", hashedPasswordAdmin, true, 0]
   );
 
   adminId = adminResult.rows[0].id;
   adminToken = jwt.sign(
-    { id: adminId, email: "admin@example.com", tokenVersion: 0 },
+    { id: adminId, email: "admin007@example.com", tokenVersion: 0 },
     JWT_SECRET,
     { expiresIn: "1h" }
   );
@@ -79,7 +79,7 @@ beforeAll(async () => {
 
   afterAll(async () => {
     // Clean up database
-    await pool.query("DELETE FROM users WHERE email IN ('admin@example.com', 'user@example.com')");
+    await pool.query("DELETE FROM users WHERE email IN ('admin007@example.com', 'user@example.com')");
     await pool.end();
   });
 
