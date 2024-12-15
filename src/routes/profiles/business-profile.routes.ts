@@ -82,6 +82,7 @@ router.put(
   verifyToken,
   validateBusinessProfile,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(400).json({ errors: errors.array() });

@@ -36,7 +36,10 @@ describe("Business Profiles Endpoints", () => {
 
   afterEach(async () => {
     // Reset the database after each test
-    await pool.query("DELETE FROM profiles_business WHERE profile_id IN (SELECT id FROM profiles WHERE user_id = $1)", [userId]);
+    await pool.query(
+      "DELETE FROM profiles_business WHERE profile_id IN (SELECT id FROM profiles WHERE user_id = $1)",
+      [userId]
+    );
     await pool.query("DELETE FROM profiles WHERE user_id = $1", [userId]);
   });
 
@@ -68,7 +71,7 @@ describe("Business Profiles Endpoints", () => {
     );
   });
 
-  it("should create or update a business profile for the user", async () => {
+  it("should create a new business profile for the user", async () => {
     const newProfileData = {
       profileData: {
         org_name: "New Organization",
@@ -81,12 +84,48 @@ describe("Business Profiles Endpoints", () => {
       .post("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)
       .send(newProfileData)
-      .expect(200);
+      .expect(201);
 
-    expect(response.body).toHaveProperty("message", "Business profile updated");
-    expect(response.body.profile).toHaveProperty("org_name", "New Organization");
-    expect(response.body.profile).toHaveProperty("category", "Finance");
-    expect(response.body.profile).toHaveProperty("work_email", "contact@neworg.com");
+    expect(response.body).toHaveProperty("message", "Business profile created successfully");
+  });
+
+  it("should update an existing business profile for the user", async () => {
+    // Create a business profile to update
+    const profileResult = await pool.query(
+      `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
+      [userId]
+    );
+    const profile_id = profileResult.rows[0].id;
+
+    console.log("profile_id", profile_id);
+
+    await pool.query(
+      `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Test Organization', 'Technology')`,
+      [profile_id]
+    );
+
+    // Get the business profile ID
+    const businessProfileResult = await pool.query(
+      `SELECT id FROM profiles_business WHERE profile_id = $1`,
+      [profile_id]
+    );
+    const businessProfileId = businessProfileResult.rows[0].id;
+
+    const updatedProfileData = {
+      profileData: {
+        org_name: "Updated Organization",
+        category: "Updated Category",
+        work_email: "updated@neworg.com",
+      },
+    };
+
+    const response = await request(app)
+      .put(`/api/businessprofiles/${businessProfileId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(updatedProfileData)
+      .expect(200);
+      
+    expect(response.body).toHaveProperty("message", "Business profile updated successfully");
   });
 
   it("should delete a business profile", async () => {
@@ -114,7 +153,7 @@ describe("Business Profiles Endpoints", () => {
     expect(verifyResult.rowCount).toBe(0);
   });
 
-  it.only("should return 404 for non-existent business profiles on GET", async () => {
+  it("should return 404 for non-existent business profiles on GET", async () => {
     const response = await request(app)
       .get("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)

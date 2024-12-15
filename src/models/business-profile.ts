@@ -195,3 +195,24 @@ export const deleteBusinessProfile = async (profileId: number): Promise<void> =>
     client.release();
   }
 };
+
+export const getAllBusinessProfiles = async (): Promise<any[]> => {
+  const query = `
+    SELECT 
+      p.id AS profile_id, 
+      pb.business_website_url, 
+      pb.org_name, 
+      pb.job_title, 
+      pb.work_email, 
+      pb.category, 
+      pb.logo_url, 
+      pb.about_business, 
+      pb.work_email_verified
+    FROM profiles p
+    INNER JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.profile_type = 'business'
+  `;
+
+  const result = await pool.query(query);
+  return result.rows;
+};
