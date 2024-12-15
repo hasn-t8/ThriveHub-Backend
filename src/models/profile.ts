@@ -14,7 +14,10 @@ export interface Profile {
  * @param businessProfileId The business profile ID
  * @returns The organization name if valid, null otherwise
  */
-export async function validateBusinessProfileOwnership(userId: number, businessProfileId: number): Promise<string | null> {
+export async function validateBusinessProfileOwnership(
+  userId: number,
+  businessProfileId: number
+): Promise<string | null> {
   const query = `
     SELECT pb.id
     FROM profiles_business pb
@@ -25,7 +28,7 @@ export async function validateBusinessProfileOwnership(userId: number, businessP
 
   try {
     const result = await pool.query(query, [userId, businessProfileId]);
-    console.log('result', result);
+    console.log("result", result);
 
     return result.rows.length > 0 ? result.rows[0].id : null; // Return the ID if found
   } catch (error) {
@@ -34,13 +37,8 @@ export async function validateBusinessProfileOwnership(userId: number, businessP
   }
 }
 
-
-
 /** --------------------- Create Profile --------------------- */
-export const createProfile = async (
-  userId: number,
-  profileType: string
-): Promise<number> => {
+export const createProfile = async (userId: number, profileType: string): Promise<number> => {
   const result = await pool.query(
     `INSERT INTO profiles (user_id, profile_type) 
      VALUES ($1, $2) 
@@ -51,12 +49,8 @@ export const createProfile = async (
 };
 
 /** --------------------- Find Profile By ID --------------------- */
-export const findProfileById = async (
-  profileId: number
-): Promise<Profile | null> => {
-  const result = await pool.query("SELECT * FROM profiles WHERE id = $1", [
-    profileId,
-  ]);
+export const findProfileById = async (profileId: number): Promise<Profile | null> => {
+  const result = await pool.query("SELECT * FROM profiles WHERE id = $1", [profileId]);
   return result.rows[0] || null;
 };
 
@@ -117,6 +111,68 @@ export const createBusinessProfile = async (
   );
 };
 
+export const getPersonalProfileByUserId = async (userId: number) => {
+  const query = `
+    SELECT 
+      u.full_name,
+      u.email,
+      p.id AS profile_id, 
+      p.profile_type, 
+      pp.occupation, 
+      pp.date_of_birth, 
+      pp.phone_number, 
+      pp.address_line_1, 
+      pp.address_line_2, 
+      pp.address_city, 
+      pp.address_zip_code, 
+      pp.img_profile_url
+    FROM users u
+    LEFT JOIN profiles p ON u.id = p.user_id AND p.profile_type = 'personal'
+    LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+    WHERE u.id = $1
+  `;
+
+  const result = await pool.query(query, [userId]);
+
+  // If no rows are returned, return null
+  if (result.rows.length === 0 || !result.rows[0].profile_id) {
+    return null;
+  }
+
+  // Return only the personal profile row
+  return result.rows[0];
+};
+
+export const getBusinessProfilesByUserId = async (userId: number) => {
+  const query = `
+    SELECT 
+      u.full_name,
+      u.email,
+      p.id AS profile_id, 
+      p.profile_type, 
+      pb.business_website_url, 
+      pb.org_name, 
+      pb.job_title, 
+      pb.work_email, 
+      pb.category, 
+      pb.logo_url, 
+      pb.about_business, 
+      pb.work_email_verified
+    FROM users u
+    LEFT JOIN profiles p ON u.id = p.user_id AND p.profile_type = 'business'
+    LEFT JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE u.id = $1
+  `;
+
+  const result = await pool.query(query, [userId]);
+
+  // Filter out rows where business profile does not exist
+  const businessProfiles = result.rows.filter((row) => row.profile_id !== null);
+
+  // Return the list of business profiles
+  return businessProfiles.length > 0 ? businessProfiles : null;
+};
+
 export const getCompleteProfileByUserId = async (userId: number) => {
   const query = `
     SELECT 
@@ -152,10 +208,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
 
   // If no rows are returned, return just the user's full_name
   if (result.rows.length === 0) {
-    const fallbackResult = await pool.query(
-      `SELECT full_name FROM users WHERE id = $1`,
-      [userId]
-    );
+    const fallbackResult = await pool.query(`SELECT full_name FROM users WHERE id = $1`, [userId]);
 
     return fallbackResult.rows[0] || null;
   }
@@ -163,9 +216,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
   let profiles = result.rows;
 
   // Check if there is no personal profile and add a default one
-  const hasPersonalProfile = profiles.some(
-    (profile) => profile.profile_type === "personal"
-  );
+  const hasPersonalProfile = profiles.some((profile) => profile.profile_type === "personal");
   // const hasBusinessProfile = profiles.some(profile => profile.profile_type === 'business');
 
   if (!hasPersonalProfile) {
@@ -181,7 +232,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
       address_line_2: null,
       address_city: null,
       address_zip_code: null,
-      img_profile_url: null
+      img_profile_url: null,
     });
   }
 
@@ -191,10 +242,7 @@ export const getCompleteProfileByUserId = async (userId: number) => {
   return profiles;
 };
 
-export const createOrUpdatePersonalProfile = async (
-  userId: number,
-  data: any
-) => {
+export const createOrUpdatePersonalProfile = async (userId: number, data: any) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -284,10 +332,7 @@ export const createOrUpdatePersonalProfile = async (
   }
 };
 
-export const createOrUpdateBusinessProfile = async (
-  userId: number,
-  data: any
-) => {
+export const createOrUpdateBusinessProfile = async (userId: number, data: any) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -383,8 +428,6 @@ export const createOrUpdateBusinessProfile = async (
   }
 };
 
-
-
 /** --------------------- Delete Profile --------------------- */
 export const deleteProfile = async (profileId: number): Promise<void> => {
   const client = await pool.connect();
@@ -398,7 +441,9 @@ export const deleteProfile = async (profileId: number): Promise<void> => {
     await client.query("DELETE FROM profiles_business WHERE profile_id = $1", [profileId]);
 
     // Delete from profiles
-    const result = await client.query("DELETE FROM profiles WHERE id = $1 RETURNING id", [profileId]);
+    const result = await client.query("DELETE FROM profiles WHERE id = $1 RETURNING id", [
+      profileId,
+    ]);
 
     if (result.rowCount === 0) {
       throw new Error("Profile not found");

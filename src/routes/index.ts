@@ -13,7 +13,7 @@ import createProfile from './profiles/profile.routes';
 import analyticsBusinessProfileViews from './analytics/business.views.routes';
 import uploadLog from './profiles/upload_logo.routes';
 import deleteRoute from "./auth/delete-auth-routes";
-
+import businessProfile from './profiles/businessprofile.routes';
 
 const router = Router();
 
@@ -30,8 +30,6 @@ router.use(createProfile);
 router.use(analyticsBusinessProfileViews);
 router.use(uploadLog);
 router.use(deleteRoute);
-
-/** ---------------------  user routes --------------------- */
-
+router.use(businessProfile);
 
 export default router;
