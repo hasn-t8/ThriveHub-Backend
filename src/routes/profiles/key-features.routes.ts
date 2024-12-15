@@ -18,13 +18,23 @@ import {
 const router = Router();
 
 // Validation middleware for feature names
-const validateFeatureName = [check("name").isString().withMessage("Feature name must be a string")];
+const validateFeatureName = [
+  check("name")
+    .isString()
+    .withMessage("Feature name must be a string")
+    .isLength({ max: 255 })
+    .withMessage("Feature name cannot exceed 255 characters"),
+];
 
 // Validation middleware for key features
 const validateKeyFeature = [
   check("businessProfileId").isInt().withMessage("Business Profile ID must be an integer"),
   check("featureNameId").isInt().withMessage("Feature Name ID must be an integer"),
-  check("text").isString().withMessage("Feature text must be a string"),
+  check("text")
+    .isString()
+    .withMessage("Feature text must be a string")
+    .isLength({ max: 1000 })
+    .withMessage("Feature text cannot exceed 1000 characters"),
 ];
 
 // Create a new feature name
@@ -38,8 +48,14 @@ router.post(
       res.status(400).json({ errors: errors.array() });
       return;
     }
+    const userId = req.user?.id;
 
-    const { name, userId } = req.body;
+    if (userId === undefined) {
+      res.status(400).json({ error: "User ID is required" });
+      return;
+    }
+
+    const { name } = req.body;
 
     try {
       const featureNameId = await createFeatureName(name, userId);
@@ -108,8 +124,15 @@ router.put(
       return;
     }
 
+    const userId = req.user?.id;
+
+    if (userId === undefined) {
+      res.status(400).json({ error: "User ID is required" });
+      return;
+    }
+
     const featureNameId = parseInt(req.params.id, 10);
-    const { name, userId } = req.body;
+    const { name } = req.body;
 
     if (isNaN(featureNameId)) {
       res.status(400).json({ error: "Invalid feature name ID" });
@@ -160,10 +183,22 @@ router.post(
       return;
     }
 
-    const { businessProfileId, featureNameId, text, userId } = req.body;
+    const userId = req.user?.id;
+
+    if (userId === undefined) {
+      res.status(400).json({ error: "User ID is required" });
+      return;
+    }
+
+    const { businessProfileId, featureNameId, text } = req.body;
 
     try {
-      const keyFeatureId = await createKeyFeature(businessProfileId, featureNameId, text, userId);
+      const keyFeatureId = await createKeyFeature(
+        businessProfileId,
+        featureNameId,
+        text,
+        userId
+      );
       res.status(201).json({ message: "Key feature added successfully", keyFeatureId });
     } catch (error) {
       console.error("Error creating key feature:", error);
@@ -221,216 +256,3 @@ router.delete(
 );
 
 export default router;
-
-/**
- * @swagger
- * tags:
- *   - name: Feature Names
- *     description: Manage feature names
- *   - name: Key Features
- *     description: Manage key features
- *
- * /feature-names:
- *   post:
- *     summary: Create a new feature name
- *     tags:
- *       - Feature Names
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 description: The name of the feature.
- *               userId:
- *                 type: integer
- *                 description: The ID of the user creating the feature name.
- *     responses:
- *       201:
- *         description: Feature name created successfully.
- *       400:
- *         description: Validation error.
- *       500:
- *         description: Internal server error.
- *   get:
- *     summary: Get all feature names
- *     tags:
- *       - Feature Names
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A list of all feature names.
- *       404:
- *         description: No feature names found.
- *       500:
- *         description: Internal server error.
- *
- * /feature-names/{id}:
- *   get:
- *     summary: Get a specific feature name by ID
- *     tags:
- *       - Feature Names
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the feature name.
- *     responses:
- *       200:
- *         description: Feature name details.
- *       400:
- *         description: Invalid feature name ID.
- *       404:
- *         description: Feature name not found.
- *       500:
- *         description: Internal server error.
- *   put:
- *     summary: Update a specific feature name by ID
- *     tags:
- *       - Feature Names
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the feature name to update.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 description: The updated name of the feature.
- *               userId:
- *                 type: integer
- *                 description: The ID of the user updating the feature name.
- *     responses:
- *       200:
- *         description: Feature name updated successfully.
- *       400:
- *         description: Validation error or invalid ID.
- *       404:
- *         description: Feature name not found.
- *       500:
- *         description: Internal server error.
- *   delete:
- *     summary: Delete a specific feature name by ID
- *     tags:
- *       - Feature Names
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the feature name to delete.
- *     responses:
- *       200:
- *         description: Feature name deleted successfully.
- *       400:
- *         description: Invalid feature name ID.
- *       404:
- *         description: Feature name not found.
- *       500:
- *         description: Internal server error.
- *
- * /keyfeatures:
- *   post:
- *     summary: Create a key feature for a feature name
- *     tags:
- *       - Key Features
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               businessProfileId:
- *                 type: integer
- *                 description: The ID of the business profile.
- *               featureNameId:
- *                 type: integer
- *                 description: The ID of the feature name.
- *               text:
- *                 type: string
- *                 description: The text of the key feature.
- *               userId:
- *                 type: integer
- *                 description: The ID of the user creating the key feature.
- *     responses:
- *       201:
- *         description: Key feature created successfully.
- *       400:
- *         description: Validation error.
- *       500:
- *         description: Internal server error.
- *
- * /keyfeatures/business-profile/{businessProfileId}:
- *   get:
- *     summary: Get all key features for a specific business profile
- *     tags:
- *       - Key Features
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: businessProfileId
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the business profile.
- *     responses:
- *       200:
- *         description: A list of key features.
- *       400:
- *         description: Invalid business profile ID.
- *       404:
- *         description: No key features found.
- *       500:
- *         description: Internal server error.
- *
- * /keyfeatures/{id}:
- *   delete:
- *     summary: Delete a specific key feature by ID
- *     tags:
- *       - Key Features
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: integer
- *         description: The ID of the key feature to delete.
- *     responses:
- *       200:
- *         description: Key feature deleted successfully.
- *       400:
- *         description: Invalid feature ID.
- *       404:
- *         description: Key feature not found.
- *       500:
- *         description: Internal server error.
- */
