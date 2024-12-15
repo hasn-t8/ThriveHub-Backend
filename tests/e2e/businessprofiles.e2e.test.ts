@@ -13,7 +13,6 @@ describe("Business Profiles Endpoints", () => {
 
   let userId: number;
   let token: string;
-  let businessProfileId: number;
 
   beforeAll(async () => {
     // Create a test user and generate a JWT
@@ -27,29 +26,32 @@ describe("Business Profiles Endpoints", () => {
     token = jwt.sign({ id: userId, email: testUser.email, tokenVersion: 0 }, JWT_SECRET, {
       expiresIn: "1h",
     });
+  });
 
-    // Create a business profile for the user
+  afterAll(async () => {
+    // Clean up test data and close the database connection
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    await pool.end();
+  });
+
+  afterEach(async () => {
+    // Reset the database after each test
+    await pool.query("DELETE FROM profiles_business WHERE profile_id IN (SELECT id FROM profiles WHERE user_id = $1)", [userId]);
+    await pool.query("DELETE FROM profiles WHERE user_id = $1", [userId]);
+  });
+
+  it("should retrieve all business profiles for the user", async () => {
     const profileResult = await pool.query(
       `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
       [userId]
     );
-    businessProfileId = profileResult.rows[0].id;
+    const businessProfileId = profileResult.rows[0].id;
 
     await pool.query(
       `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Test Organization', 'Technology')`,
       [businessProfileId]
     );
-  });
 
-  afterAll(async () => {
-    // Clean up test data and close the database connection
-    await pool.query("DELETE FROM profiles_business WHERE profile_id = $1", [businessProfileId]);
-    await pool.query("DELETE FROM profiles WHERE user_id = $1", [userId]);
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
-    await pool.end();
-  });
-
-  it("should retrieve all business profiles for the user", async () => {
     const response = await request(app)
       .get("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)
@@ -88,7 +90,6 @@ describe("Business Profiles Endpoints", () => {
   });
 
   it("should delete a business profile", async () => {
-    // Create a temporary business profile
     const tempProfileResult = await pool.query(
       `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
       [userId]
@@ -100,7 +101,6 @@ describe("Business Profiles Endpoints", () => {
       [tempProfileId]
     );
 
-    // Delete the temporary business profile
     const response = await request(app)
       .delete(`/api/businessprofiles/${tempProfileId}`)
       .set("Authorization", `Bearer ${token}`)
@@ -108,7 +108,6 @@ describe("Business Profiles Endpoints", () => {
 
     expect(response.body).toHaveProperty("message", "Business profile deleted successfully");
 
-    // Verify deletion
     const verifyResult = await pool.query(`SELECT * FROM profiles_business WHERE profile_id = $1`, [
       tempProfileId,
     ]);
@@ -117,21 +116,18 @@ describe("Business Profiles Endpoints", () => {
 
   it("should return 404 for non-existent business profiles on GET", async () => {
     const response = await request(app)
-      .get("/api/businessprofiles")
+      .get("/api/businessprofiles/9999")
       .set("Authorization", `Bearer ${token}`)
-      .expect(200);
+      .expect(404);
 
-    const emptyResponse = await request(app).get("/api/businessprofiles/9999").expect(404);
-
-    expect(emptyResponse.body.error).toBe("No business profiles found");
+    expect(response.body.error).toBe("No business profiles found");
   });
 
   it("should return 404 for non-existent business profiles on DELETE", async () => {
     const response = await request(app)
       .delete("/api/businessprofiles/99999")
-      .set("Authorization", `Bearer ${token}`);
-
-    console.log("response", response.body);
+      .set("Authorization", `Bearer ${token}`)
+      .expect(404);
 
     expect(response.body.error).toBe("Business profile not found");
   });
