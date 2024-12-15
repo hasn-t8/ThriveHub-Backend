@@ -30,6 +30,8 @@ router.get(
     try {
       const businessProfiles = await getBusinessProfilesByUserId(userId);
 
+      console.log('>>>>>>>>>>. businessProfiles ........', businessProfiles);
+      
       if (!businessProfiles) {
         res.status(404).json({ error: "No business profiles found" });
         return;
@@ -95,6 +97,10 @@ router.delete(
       await deleteProfile(profileId);
       res.status(200).json({ message: "Business profile deleted successfully" });
     } catch (error) {
+      if (error instanceof Error && error.message === "Profile not found") {
+        res.status(404).json({ error: "Business profile not found" });
+        return;
+      }
       console.error("Error deleting business profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }

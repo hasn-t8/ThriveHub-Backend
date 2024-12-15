@@ -434,25 +434,27 @@ export const deleteProfile = async (profileId: number): Promise<void> => {
   try {
     await client.query("BEGIN");
 
-    // Delete from profiles_personal if exists
-    await client.query("DELETE FROM profiles_personal WHERE profile_id = $1", [profileId]);
+    // Check if profile exists
+    const profileResult = await client.query(
+      "SELECT id FROM profiles WHERE id = $1 AND profile_type = 'business'",
+      [profileId]
+    );
 
-    // Delete from profiles_business if exists
-    await client.query("DELETE FROM profiles_business WHERE profile_id = $1", [profileId]);
-
-    // Delete from profiles
-    const result = await client.query("DELETE FROM profiles WHERE id = $1 RETURNING id", [
-      profileId,
-    ]);
-
-    if (result.rowCount === 0) {
+    if (profileResult.rowCount === 0) {
       throw new Error("Profile not found");
     }
+
+    // Delete profile business entry
+    await client.query("DELETE FROM profiles_business WHERE profile_id = $1", [profileId]);
+
+    // Delete profile entry
+    await client.query("DELETE FROM profiles WHERE id = $1", [profileId]);
 
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error deleting profile:", error);
+
+    // Re-throw the error so it can be handled at the route level
     throw error;
   } finally {
     client.release();

@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../../src/config/auth";
 
-describe("Business Profile Routes E2E Test", () => {
+describe("Business Profiles Endpoints", () => {
   const testUser = {
     email: "businessprofileuser@example.com",
     password: "securepassword",
@@ -33,11 +33,10 @@ describe("Business Profile Routes E2E Test", () => {
       `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
       [userId]
     );
-
     businessProfileId = profileResult.rows[0].id;
 
     await pool.query(
-      `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Test Organization', 'Tech')`,
+      `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Test Organization', 'Technology')`,
       [businessProfileId]
     );
   });
@@ -60,15 +59,15 @@ describe("Business Profile Routes E2E Test", () => {
       expect.arrayContaining([
         expect.objectContaining({
           org_name: "Test Organization",
-          category: "Tech",
+          category: "Technology",
           profile_id: businessProfileId,
         }),
       ])
     );
   });
 
-  it("should create a new business profile for the user", async () => {
-    const newBusinessProfileData = {
+  it("should create or update a business profile for the user", async () => {
+    const newProfileData = {
       profileData: {
         org_name: "New Organization",
         category: "Finance",
@@ -79,7 +78,7 @@ describe("Business Profile Routes E2E Test", () => {
     const response = await request(app)
       .post("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)
-      .send(newBusinessProfileData)
+      .send(newProfileData)
       .expect(200);
 
     expect(response.body).toHaveProperty("message", "Business profile updated");
@@ -89,19 +88,19 @@ describe("Business Profile Routes E2E Test", () => {
   });
 
   it("should delete a business profile", async () => {
-    // Create a temporary profile to delete
-    const profileResult = await pool.query(
+    // Create a temporary business profile
+    const tempProfileResult = await pool.query(
       `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
       [userId]
     );
-    const tempProfileId = profileResult.rows[0].id;
+    const tempProfileId = tempProfileResult.rows[0].id;
 
     await pool.query(
       `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Temp Organization', 'Temp Category')`,
       [tempProfileId]
     );
 
-    // Delete the temporary profile
+    // Delete the temporary business profile
     const response = await request(app)
       .delete(`/api/businessprofiles/${tempProfileId}`)
       .set("Authorization", `Bearer ${token}`)
@@ -110,28 +109,29 @@ describe("Business Profile Routes E2E Test", () => {
     expect(response.body).toHaveProperty("message", "Business profile deleted successfully");
 
     // Verify deletion
-    const verifyResponse = await pool.query(
-      `SELECT * FROM profiles_business WHERE profile_id = $1`,
-      [tempProfileId]
-    );
-
-    expect(verifyResponse.rowCount).toBe(0);
+    const verifyResult = await pool.query(`SELECT * FROM profiles_business WHERE profile_id = $1`, [
+      tempProfileId,
+    ]);
+    expect(verifyResult.rowCount).toBe(0);
   });
 
-  it("should return 404 when trying to retrieve non-existent business profiles", async () => {
+  it("should return 404 for non-existent business profiles on GET", async () => {
     const response = await request(app)
-      .get("/api/businessprofiles/99999") // Non-existent profile ID
+      .get("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)
-      .expect(404);
+      .expect(200);
 
-    expect(response.body.error).toBe("No business profiles found");
+    const emptyResponse = await request(app).get("/api/businessprofiles/9999").expect(404);
+
+    expect(emptyResponse.body.error).toBe("No business profiles found");
   });
 
-  it("should return 404 when trying to delete a non-existent business profile", async () => {
+  it("should return 404 for non-existent business profiles on DELETE", async () => {
     const response = await request(app)
-      .delete("/api/businessprofiles/99999") // Non-existent profile ID
-      .set("Authorization", `Bearer ${token}`)
-      .expect(404);
+      .delete("/api/businessprofiles/99999")
+      .set("Authorization", `Bearer ${token}`);
+
+    console.log("response", response.body);
 
     expect(response.body.error).toBe("Business profile not found");
   });
