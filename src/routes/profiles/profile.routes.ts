@@ -31,8 +31,8 @@ router.get(
     try {
       const profiles = await getPersonalProfileByUserId(userId);
 
-      if (!profiles) {
-        res.status(404).json({ error: "Profiles not found" });
+      if (!profiles || profiles.length === 0) {
+        res.status(200).json([]);
         return;
       }
 
