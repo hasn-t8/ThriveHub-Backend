@@ -24,6 +24,10 @@ describe("Policy Model", () => {
     await pool.query("DELETE FROM users WHERE id = $1", [mockUserId]);
   });
 
+  afterAll(async () => {
+    await pool.end();
+  });
+
   it("should attach a policy to a user", async () => {
     const mockPolicy = {
       id: mockPolicyId,
@@ -35,18 +39,18 @@ describe("Policy Model", () => {
     await attachPolicyToUser(mockUserId, mockPolicy);
 
     // Verify the policy is correctly attached in the database
-    const result = await pool.query(
-      "SELECT * FROM policies WHERE user_id = $1 AND effect = $2",
-      [mockUserId, mockPolicy.effect]
-    );
+    const result = await pool.query("SELECT * FROM policies WHERE user_id = $1 AND effect = $2", [
+      mockUserId,
+      mockPolicy.effect,
+    ]);
 
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).toEqual(
       expect.objectContaining({
         user_id: mockUserId,
         effect: "Allow",
-        actions: JSON.stringify(["read"]),
-        resources: JSON.stringify(["profile"]),
+        actions: ["read"],
+        resources: ["profile"],
       })
     );
   });
