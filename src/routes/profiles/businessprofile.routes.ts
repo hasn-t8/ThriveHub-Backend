@@ -4,13 +4,14 @@ import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import {
   getBusinessProfilesByUserId,
-  createOrUpdateBusinessProfile,
-  deleteProfile,
-} from "../../models/profile";
+  createBusinessProfile,
+  updateBusinessProfile,
+  deleteBusinessProfile,
+} from "../../models/business-profile";
 
 const router = Router();
 
-// Validation middleware for business profile updates
+// Validation middleware for business profile
 const validateBusinessProfile = [
   check("profileData").isObject().withMessage("Profile data must be an object"),
 ];
@@ -29,8 +30,6 @@ router.get(
 
     try {
       const businessProfiles = await getBusinessProfilesByUserId(userId);
-
-      console.log('>>>>>>>>>>. businessProfiles ........', businessProfiles);
       
       if (!businessProfiles) {
         res.status(404).json({ error: "No business profiles found" });
@@ -45,7 +44,7 @@ router.get(
   }
 );
 
-// Create or update a business profile
+// Create a new business profile
 router.post(
   "/businessprofiles",
   verifyToken,
@@ -66,9 +65,47 @@ router.post(
     }
 
     try {
-      const businessProfile = await createOrUpdateBusinessProfile(userId, profileData);
-      res.status(200).json({ message: "Business profile updated", profile: businessProfile });
+      const businessProfile = await createBusinessProfile(userId, profileData);
+      res
+        .status(201)
+        .json({ message: "Business profile created successfully", profile: businessProfile });
     } catch (error) {
+      console.error("Error creating business profile:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Update an existing business profile
+router.put(
+  "/businessprofiles/:profileId",
+  verifyToken,
+  validateBusinessProfile,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const profileId = parseInt(req.params.profileId, 10);
+    const { profileData } = req.body;
+
+    if (isNaN(profileId)) {
+      res.status(400).json({ error: "Invalid profile ID" });
+      return;
+    }
+
+    try {
+      const updatedProfile = await updateBusinessProfile(profileId, profileData);
+      res
+        .status(200)
+        .json({ message: "Business profile updated successfully", profile: updatedProfile });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Business profile not found") {
+        res.status(404).json({ error: "Business profile not found" });
+        return;
+      }
       console.error("Error updating business profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -94,7 +131,7 @@ router.delete(
     }
 
     try {
-      await deleteProfile(profileId);
+      await deleteBusinessProfile(profileId);
       res.status(200).json({ message: "Business profile deleted successfully" });
     } catch (error) {
       if (error instanceof Error && error.message === "Profile not found") {
@@ -155,7 +192,7 @@ export default router;
  *         description: Internal Server Error
  *
  *   post:
- *     summary: Create or update a business profile
+ *     summary: Create a new business profile
  *     tags: [BusinessProfiles]
  *     security:
  *       - bearerAuth: []
@@ -170,7 +207,7 @@ export default router;
  *             properties:
  *               profileData:
  *                 type: object
- *                 description: The business profile data to create or update.
+ *                 description: The business profile data to create.
  *                 additionalProperties: true
  *                 example:
  *                   business_website_url: "https://example.com"
@@ -182,8 +219,8 @@ export default router;
  *                   about_business: "Leading technology company."
  *                   work_email_verified: true
  *     responses:
- *       200:
- *         description: Business profile updated
+ *       201:
+ *         description: Business profile created successfully
  *         content:
  *           application/json:
  *             schema:
@@ -199,6 +236,54 @@ export default router;
  *         description: Internal Server Error
  *
  * /businessprofiles/{profileId}:
+ *   put:
+ *     summary: Update an existing business profile
+ *     tags: [BusinessProfiles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: profileId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business profile to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - profileData
+ *             properties:
+ *               profileData:
+ *                 type: object
+ *                 description: The business profile data to update.
+ *                 additionalProperties: true
+ *                 example:
+ *                   org_name: "Updated Org Name"
+ *                   category: "Updated Category"
+ *                   business_website_url: "https://updatedwebsite.com"
+ *     responses:
+ *       200:
+ *         description: Business profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 profile:
+ *                   type: object
+ *       400:
+ *         description: Invalid or missing data
+ *       404:
+ *         description: Business profile not found
+ *       500:
+ *         description: Internal Server Error
+ *
  *   delete:
  *     summary: Delete a business profile by ID
  *     tags: [BusinessProfiles]
@@ -216,6 +301,8 @@ export default router;
  *         description: Business profile deleted successfully
  *       400:
  *         description: Invalid or missing profile ID
+ *       404:
+ *         description: Business profile not found
  *       500:
  *         description: Internal Server Error
  */

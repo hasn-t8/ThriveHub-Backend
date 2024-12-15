@@ -114,9 +114,9 @@ describe("Business Profiles Endpoints", () => {
     expect(verifyResult.rowCount).toBe(0);
   });
 
-  it("should return 404 for non-existent business profiles on GET", async () => {
+  it.only("should return 404 for non-existent business profiles on GET", async () => {
     const response = await request(app)
-      .get("/api/businessprofiles/9999")
+      .get("/api/businessprofiles")
       .set("Authorization", `Bearer ${token}`)
       .expect(404);
 

@@ -156,3 +156,32 @@ export const createOrUpdatePersonalProfile = async (userId: number, data: any) =
     client.release();
   }
 };
+
+/** --------------------- Delete Profile --------------------- */
+export const deleteProfile = async (profileId: number): Promise<void> => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Delete from profiles_personal if exists
+    await client.query("DELETE FROM profiles_personal WHERE profile_id = $1", [profileId]);
+
+    // Delete from profiles_business if exists
+    await client.query("DELETE FROM profiles_business WHERE profile_id = $1", [profileId]);
+
+    // Delete from profiles
+    const result = await client.query("DELETE FROM profiles WHERE id = $1 RETURNING id", [profileId]);
+
+    if (result.rowCount === 0) {
+      throw new Error("Profile not found");
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error deleting profile:", error);
+    throw error;
+  } finally {
+    client.release();
+  }
+};
