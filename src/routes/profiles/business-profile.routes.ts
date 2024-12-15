@@ -150,13 +150,13 @@ export default router;
 /**
  * @swagger
  * tags:
- *   name: BusinessProfiles
+ *   name: Business Profiles
  *   description: Endpoints for managing business profiles
  *
  * /businessprofiles:
  *   get:
  *     summary: Get all business profiles for the authenticated user
- *     tags: [BusinessProfiles]
+ *     tags: [Business Profiles]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -194,7 +194,7 @@ export default router;
  *
  *   post:
  *     summary: Create a new business profile
- *     tags: [BusinessProfiles]
+ *     tags: [Business Profiles]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -239,7 +239,7 @@ export default router;
  * /businessprofiles/{profileId}:
  *   put:
  *     summary: Update an existing business profile
- *     tags: [BusinessProfiles]
+ *     tags: [Business Profiles]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -287,7 +287,7 @@ export default router;
  *
  *   delete:
  *     summary: Delete a business profile by ID
- *     tags: [BusinessProfiles]
+ *     tags: [Business Profiles]
  *     security:
  *       - bearerAuth: []
  *     parameters:

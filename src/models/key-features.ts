@@ -4,6 +4,7 @@ import pool from "../config/db";
 export interface KeyFeature {
   id: number;
   business_profile_id: number;
+  feature_name_id: number;
   text: string;
   created_at: Date;
   updated_at: Date;
@@ -24,15 +25,16 @@ export interface FeatureName {
 /** --------------------- Create Key Feature --------------------- */
 export const createKeyFeature = async (
   businessProfileId: number,
+  featureNameId: number,
   text: string,
   userId: number
 ): Promise<number> => {
   const result = await pool.query(
     `
-    INSERT INTO key_features (business_profile_id, text, created_by, updated_by) 
-    VALUES ($1, $2, $3, $3) RETURNING id
+    INSERT INTO key_features (business_profile_id, feature_name_id, text, created_by, updated_by) 
+    VALUES ($1, $2, $3, $4, $4) RETURNING id
     `,
-    [businessProfileId, text, userId]
+    [businessProfileId, featureNameId, text, userId]
   );
   return result.rows[0].id;
 };
@@ -58,7 +60,17 @@ export const findKeyFeaturesByBusinessProfile = async (
 ): Promise<KeyFeature[]> => {
   const result = await pool.query(
     `
-    SELECT * FROM key_features WHERE business_profile_id = $1
+    SELECT 
+      kf.*,
+      fn.name AS feature_name
+    FROM 
+      key_features kf
+    INNER JOIN 
+      feature_names fn
+    ON 
+      kf.feature_name_id = fn.id
+    WHERE 
+      kf.business_profile_id = $1
     `,
     [businessProfileId]
   );
@@ -102,16 +114,17 @@ export const deleteFeatureName = async (featureNameId: number): Promise<void> =>
 /** --------------------- Update Key Feature --------------------- */
 export const updateKeyFeature = async (
   keyFeatureId: number,
+  featureNameId: number,
   text: string,
   userId: number
 ): Promise<void> => {
   const result = await pool.query(
     `
     UPDATE key_features 
-    SET text = $1, updated_by = $2, updated = CURRENT_TIMESTAMP 
-    WHERE id = $3 RETURNING id
+    SET feature_name_id = $1, text = $2, updated_by = $3, updated = CURRENT_TIMESTAMP 
+    WHERE id = $4 RETURNING id
     `,
-    [text, userId, keyFeatureId]
+    [featureNameId, text, userId, keyFeatureId]
   );
   if (result.rowCount === 0) {
     throw new Error("Key Feature not found");

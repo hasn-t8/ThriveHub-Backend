@@ -33,14 +33,14 @@ export default router;
 /**
  * @swagger
  * tags:
- *   name: AdminBusinessProfiles
+ *   name: Admin Business Profiles
  *   description: Endpoints for managing business profiles as an admin
  *
  * /admin/businessprofiles:
  *   get:
  *     summary: Retrieve all business profiles
  *     description: This endpoint allows admin users to retrieve all business profiles. Admins must have full access permissions.
- *     tags: [AdminBusinessProfiles]
+ *     tags: [Admin Business Profiles]
  *     security:
  *       - bearerAuth: [] # Using token-based authentication
  *     responses:
