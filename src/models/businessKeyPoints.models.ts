@@ -42,6 +42,28 @@ export const createBusinessKeyPoint = async (
   return result.rows[0].id;
 };
 
+/** --------------------- Update Business Key Point --------------------- */
+export const updateBusinessKeyPoint = async (
+  keyPointId: number,
+  keyPointNameId: number,
+  text: string,
+  type: string,
+  userId: number
+): Promise<void> => {
+  const result = await pool.query(
+    `
+    UPDATE business_key_points 
+    SET business_key_point_name_id = $1, text = $2, type = $3, updated_by = $4, updated = CURRENT_TIMESTAMP 
+    WHERE id = $5 RETURNING id
+    `,
+    [keyPointNameId, text, type, userId, keyPointId]
+  );
+  if (result.rowCount === 0) {
+    throw new Error("Business Key Point not found");
+  }
+};
+
+
 /** --------------------- Create Business Key Point Name --------------------- */
 export const createBusinessKeyPointName = async (
   name: string,
@@ -113,26 +135,5 @@ export const deleteBusinessKeyPointName = async (keyPointNameId: number): Promis
   );
   if (result.rowCount === 0) {
     throw new Error("Business Key Point Name not found");
-  }
-};
-
-/** --------------------- Update Business Key Point --------------------- */
-export const updateBusinessKeyPoint = async (
-  keyPointId: number,
-  keyPointNameId: number,
-  text: string,
-  type: string,
-  userId: number
-): Promise<void> => {
-  const result = await pool.query(
-    `
-    UPDATE business_key_points 
-    SET business_key_point_name_id = $1, text = $2, type = $3, updated_by = $4, updated = CURRENT_TIMESTAMP 
-    WHERE id = $5 RETURNING id
-    `,
-    [keyPointNameId, text, type, userId, keyPointId]
-  );
-  if (result.rowCount === 0) {
-    throw new Error("Business Key Point not found");
   }
 };

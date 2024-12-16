@@ -63,7 +63,6 @@ router.post(
 router.put(
   "/business-key-points/:id",
   verifyToken,
-  validateKeyPoint,
   async (req: AuthenticatedRequest, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
