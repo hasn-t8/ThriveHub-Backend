@@ -7,6 +7,8 @@
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:only": "jest ./tests/e2e/features-and-keyfeatures.e2e.test.ts",
     "build": "tsc",
     "migrate:up": "ts-node src/migrations/index.ts",
     "migrate:down": "ts-node src/migrations/index.ts rollback",

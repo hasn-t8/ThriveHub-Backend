@@ -1,4 +1,5 @@
 import { Router } from 'express';
+const router = Router();
 
 /** ---------------------  auth routes --------------------- */
 import authLoginRoute from './auth/login.auth.routes';
@@ -9,15 +10,6 @@ import logoutRoute from './auth/logout.auth.routes';
 import forgotPasswordRoute from './auth/forgot-password.auth.routes';
 import forgotPasswordChangeRoute from './auth/forgot-password-change.auth.routes';
 import changePasswordRoute from './auth/change-password.auth.routes';
-import createProfile from './profiles/profile.routes';
-import analyticsBusinessProfileViews from './analytics/business.views.routes';
-import uploadLog from './profiles/upload_logo.routes';
-import deleteRoute from "./auth/delete-auth-routes";
-
-
-const router = Router();
-
-/** ---------------------  auth routes --------------------- */
 router.use(authLoginRoute);
 router.use(authRegistrationRoute);
 router.use(verifyJwtTokenRoute);
@@ -26,12 +18,28 @@ router.use(logoutRoute);
 router.use(forgotPasswordRoute);
 router.use(forgotPasswordChangeRoute);
 router.use(changePasswordRoute);
+
+/** ---------------------  profile routes --------------------- */
+import createProfile from './profiles/profile.routes';
+import analyticsBusinessProfileViews from './analytics/business.views.routes';
+import deleteUserRoute from "./auth/delete-auth-routes";
 router.use(createProfile);
 router.use(analyticsBusinessProfileViews);
-router.use(uploadLog);
-router.use(deleteRoute);
 
-/** ---------------------  user routes --------------------- */
+router.use(deleteUserRoute);
+
+/** ---------------------  admin routes --------------------- */
+import adminBusinessProfile from './admin/business-profile.routes';
+router.use(adminBusinessProfile);
+
+
+/** ---------------------  business profile routes --------------------- */
+import uploadLogo from './profiles/upload_logo.routes';
+import businessProfile from './profiles/business-profile.routes';
+import keyFeaturesAndKeyName from './profiles/key-features.routes';
+router.use(uploadLogo);
+router.use(businessProfile);
+router.use(keyFeaturesAndKeyName);
 
 
 export default router;

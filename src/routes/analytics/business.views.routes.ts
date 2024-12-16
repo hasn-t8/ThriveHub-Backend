@@ -57,13 +57,17 @@ router.get(
 );
 
 export default router;
-
 /**
  * @swagger
+ * tags:
+ *   - name: Analytics Business Profiles
+ *     description: Endpoints for managing business profiles
+ * 
  * /analytics/profile-business/{id}/view:
  *   post:
  *     summary: Increment the view count of a business profile
- *     tags: [Business Profiles]
+ *     tags:
+ *       - Analytics Business Profiles
  *     parameters:
  *       - in: path
  *         name: id
@@ -97,14 +101,12 @@ export default router;
  *                   example: Business profile not found
  *       500:
  *         description: Internal server error
- */
-
-/**
- * @swagger
+ * 
  * /analytics/profile-business/{id}/views:
  *   get:
  *     summary: Retrieve the view count of a business profile
- *     tags: [Business Profiles]
+ *     tags:
+ *       - Analytics Business Profiles
  *     parameters:
  *       - in: path
  *         name: id

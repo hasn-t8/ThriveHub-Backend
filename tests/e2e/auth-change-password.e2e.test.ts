@@ -1,6 +1,6 @@
 import request from 'supertest';
-import app from '../../src/app'; // Your Express app
-import pool from '../../src/config/db'; // Your database connection
+import app from '../../src/app';
+import pool from '../../src/config/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../../src/config/auth';

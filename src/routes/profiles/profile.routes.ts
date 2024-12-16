@@ -2,11 +2,7 @@ import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
-import {
-  getCompleteProfileByUserId,
-  createOrUpdatePersonalProfile,
-  createOrUpdateBusinessProfile,
-} from "../../models/profile";
+import { getPersonalProfileByUserId, createOrUpdatePersonalProfile } from "../../models/profile";
 
 import { updateUserFullName } from "../../models/user";
 
@@ -33,10 +29,10 @@ router.get(
     }
 
     try {
-      const profiles = await getCompleteProfileByUserId(userId);
+      const profiles = await getPersonalProfileByUserId(userId);
 
-      if (!profiles) {
-        res.status(404).json({ error: "Profiles not found" });
+      if (!profiles || profiles.length === 0) {
+        res.status(200).json([]);
         return;
       }
 
@@ -69,19 +65,11 @@ router.post(
     }
 
     try {
-      if (profileType === "personal") {
-
-        const personalProfile = await createOrUpdatePersonalProfile(userId, profileData);
-        if (fullName && fullName.trim() !== "") {
-          await updateUserFullName(userId, fullName);
-        }
-        res.status(200).json({ message: "Personal profile updated", profile: personalProfile });
-        
-      } else if (profileType === "business") {
-
-        const businessProfile = await createOrUpdateBusinessProfile(userId, profileData);
-        res.status(200).json({ message: "Business profile updated", profile: businessProfile });
+      const personalProfile = await createOrUpdatePersonalProfile(userId, profileData);
+      if (fullName && fullName.trim() !== "") {
+        await updateUserFullName(userId, fullName);
       }
+      res.status(200).json({ message: "Personal profile updated", profile: personalProfile });
     } catch (error) {
       console.error("Error updating profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
