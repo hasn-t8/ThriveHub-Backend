@@ -55,12 +55,12 @@ router.get(
       res.status(400).json({ error: "User ID is required" });
       return;
     }
-  //TODO: allow if the user owns this business profile, or if the user is an admin
+    //TODO: allow if the user owns this business profile, or if the user is an admin
     const profileId = parseInt(req.params.profileId, 10);
 
     try {
       const businessProfiles = await getBusinessProfileByBusinessProfileId(profileId);
-      
+
       if (!businessProfiles) {
         res.status(404).json({ error: "No business profiles found" });
         return;
@@ -267,6 +267,51 @@ export default router;
  *         description: Internal Server Error
  *
  * /businessprofiles/{profileId}:
+ *   get:
+ *     summary: Get a specific business profile by its ID
+ *     tags: [Business Profiles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: profileId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business profile to retrieve
+ *     responses:
+ *       200:
+ *         description: Business profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 profile_id:
+ *                   type: integer
+ *                 business_website_url:
+ *                   type: string
+ *                 org_name:
+ *                   type: string
+ *                 job_title:
+ *                   type: string
+ *                 work_email:
+ *                   type: string
+ *                 category:
+ *                   type: string
+ *                 logo_url:
+ *                   type: string
+ *                 about_business:
+ *                   type: string
+ *                 work_email_verified:
+ *                   type: boolean
+ *       400:
+ *         description: User ID is required or invalid profile ID
+ *       404:
+ *         description: No business profile found
+ *       500:
+ *         description: Internal Server Error
+ *
  *   put:
  *     summary: Update an existing business profile
  *     tags: [Business Profiles]
