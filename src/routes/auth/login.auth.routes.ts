@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { findUserByEmail } from "../../models/user";
+import { findUserByEmail } from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import { JWT_SECRET, JWT_EXPIRATION } from "../../config/auth";
 

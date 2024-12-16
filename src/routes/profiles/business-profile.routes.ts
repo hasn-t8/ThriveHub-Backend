@@ -7,7 +7,8 @@ import {
   createBusinessProfile,
   updateBusinessProfile,
   deleteBusinessProfile,
-} from "../../models/business-profile";
+  getBusinessProfileByBusinessProfileId,
+} from "../../models/business-profile.models";
 
 const router = Router();
 
@@ -30,6 +31,35 @@ router.get(
 
     try {
       const businessProfiles = await getBusinessProfilesByUserId(userId);
+      
+      if (!businessProfiles) {
+        res.status(404).json({ error: "No business profiles found" });
+        return;
+      }
+
+      res.status(200).json(businessProfiles);
+    } catch (error) {
+      console.error("Error fetching business profiles:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+router.get(
+  "/businessprofiles/:profileId",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+
+    if (userId === undefined) {
+      res.status(400).json({ error: "User ID is required" });
+      return;
+    }
+  //TODO: allow if the user owns this business profile, or if the user is an admin
+    const profileId = parseInt(req.params.profileId, 10);
+
+    try {
+      const businessProfiles = await getBusinessProfileByBusinessProfileId(profileId);
       
       if (!businessProfiles) {
         res.status(404).json({ error: "No business profiles found" });

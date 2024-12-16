@@ -3,7 +3,7 @@ import multer from "multer";
 import AWS from "aws-sdk";
 import path from "path";
 import { verifyToken } from "../../middleware/authenticate";
-import { validateBusinessProfileOwnership } from "../../models/business-profile";
+import { validateBusinessProfileOwnership } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 

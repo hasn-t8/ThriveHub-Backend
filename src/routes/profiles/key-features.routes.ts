@@ -8,12 +8,12 @@ import {
   findFeatureNameById,
   updateFeatureName,
   deleteFeatureName,
-} from "../../models/feature-names";
+} from "../../models/feature-names.models";
 import {
   createKeyFeature,
   findKeyFeaturesByBusinessProfile,
   deleteKeyFeature,
-} from "../../models/key-features";
+} from "../../models/key-features.models";
 
 const router = Router();
 

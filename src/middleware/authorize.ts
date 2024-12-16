@@ -1,6 +1,6 @@
 import { Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../types/authenticated-request";
-import { getPoliciesForUser } from "../models/policy";
+import { getPoliciesForUser } from "../models/policy.models";
 
 export const authorize = (requiredAction: string, requiredResource: string) => {
   return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {

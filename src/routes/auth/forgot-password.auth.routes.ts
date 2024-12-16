@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { findUserByEmail, saveResetToken } from "../../models/user";
+import { findUserByEmail, saveResetToken } from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
 // import nodemailer from "nodemailer";

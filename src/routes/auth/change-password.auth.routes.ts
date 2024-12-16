@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { findUserByEmail, updatePassword } from '../../models/user';
+import { findUserByEmail, updatePassword } from '../../models/user.models';
 import { check, validationResult } from 'express-validator';
 import { verifyToken } from '../../middleware/authenticate';
 import { AuthenticatedRequest } from '../../types/authenticated-request';

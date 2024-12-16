@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { verifyToken } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
-import { getAllBusinessProfiles } from "../../models/business-profile";
+import { getAllBusinessProfiles } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = Router();

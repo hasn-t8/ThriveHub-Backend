@@ -5,7 +5,7 @@ import {
   findUserByEmail,
   assignUserTypes,
   saveVerificationCode,
-} from "../../models/user";
+} from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
 

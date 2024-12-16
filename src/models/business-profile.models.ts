@@ -216,3 +216,26 @@ export const getAllBusinessProfiles = async (): Promise<any[]> => {
   const result = await pool.query(query);
   return result.rows;
 };
+
+export const getBusinessProfileByBusinessProfileId = async (businessProfileId: number): Promise<any | null> => {
+  const query = `
+    SELECT 
+      pb.id AS business_profile_id, 
+      p.id AS profile_id, 
+      pb.business_website_url, 
+      pb.org_name, 
+      pb.job_title, 
+      pb.work_email, 
+      pb.category, 
+      pb.logo_url, 
+      pb.about_business, 
+      pb.work_email_verified
+    FROM profiles p
+    INNER JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.profile_type = 'business' AND pb.id = $1
+  `;
+
+  const result = await pool.query(query, [businessProfileId]);
+
+  return result.rows.length > 0 ? result.rows[0] : null;
+};

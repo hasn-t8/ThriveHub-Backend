@@ -2,9 +2,9 @@ import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
-import { getPersonalProfileByUserId, createOrUpdatePersonalProfile } from "../../models/profile";
+import { getPersonalProfileByUserId, createOrUpdatePersonalProfile } from "../../models/profile.models";
 
-import { updateUserFullName } from "../../models/user";
+import { updateUserFullName } from "../../models/user.models";
 
 const router = Router();
 

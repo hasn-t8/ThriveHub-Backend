@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { findUserByEmail, activateUser } from "../../models/user";
+import { findUserByEmail, activateUser } from "../../models/user.models";
 import pool from "../../config/db";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";

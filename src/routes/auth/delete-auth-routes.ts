@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
-import { deleteProfile } from "../../models/profile";
-import { deleteUser } from "../../models/user";
+import { deleteProfile } from "../../models/profile.models";
+import { deleteUser } from "../../models/user.models";
 import { AuthenticatedRequest } from '../../types/authenticated-request';
 import { verifyToken } from '../../middleware/authenticate';
 import { check, validationResult } from 'express-validator';

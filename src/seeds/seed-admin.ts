@@ -1,5 +1,5 @@
-import { findUserByEmail, createUser, assignUserTypes } from "../models/user";
-import { attachPolicyToUser } from "../models/policy";
+import { findUserByEmail, createUser, assignUserTypes } from "../models/user.models";
+import { attachPolicyToUser } from "../models/policy.models";
 
 export const seedAdmin = async (): Promise<void> => {
   const adminEmail = "admin@example.com";
