@@ -256,3 +256,260 @@ router.delete(
 );
 
 export default router;
+
+/**
+ * @swagger
+ * tags:
+ *   name: Feature Names and Key Features
+ *   description: Endpoints for managing feature names and key features
+ *
+ * /feature-names:
+ *   post:
+ *     summary: Create a new feature name
+ *     description: This endpoint allows a user to create a new feature name.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: [] # Token-based authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: The name of the feature
+ *                 maxLength: 255
+ *     responses:
+ *       201:
+ *         description: Feature name created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 featureNameId:
+ *                   type: integer
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       500:
+ *         description: Internal server error
+ *
+ *   get:
+ *     summary: Retrieve all feature names
+ *     description: This endpoint allows a user to retrieve all feature names.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved feature names
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   created:
+ *                     type: string
+ *                     format: date-time
+ *                   updated:
+ *                     type: string
+ *                     format: date-time
+ *       404:
+ *         description: No feature names found
+ *       500:
+ *         description: Internal server error
+ *
+ * /feature-names/{id}:
+ *   get:
+ *     summary: Retrieve a specific feature name
+ *     description: This endpoint allows a user to retrieve a specific feature name by ID.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved feature name
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 created:
+ *                   type: string
+ *                   format: date-time
+ *                 updated:
+ *                   type: string
+ *                   format: date-time
+ *       400:
+ *         description: Invalid feature name ID
+ *       404:
+ *         description: Feature name not found
+ *       500:
+ *         description: Internal server error
+ *
+ *   put:
+ *     summary: Update a specific feature name
+ *     description: This endpoint allows a user to update a specific feature name by ID.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 maxLength: 255
+ *     responses:
+ *       200:
+ *         description: Feature name updated successfully
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Feature name not found
+ *       500:
+ *         description: Internal server error
+ *
+ *   delete:
+ *     summary: Delete a specific feature name
+ *     description: This endpoint allows a user to delete a specific feature name by ID.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Feature name deleted successfully
+ *       400:
+ *         description: Invalid feature name ID
+ *       404:
+ *         description: Feature name not found
+ *       500:
+ *         description: Internal server error
+ *
+ * /keyfeatures:
+ *   post:
+ *     summary: Create a key feature
+ *     description: This endpoint allows a user to create a key feature for a specific feature name.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - businessProfileId
+ *               - featureNameId
+ *               - text
+ *             properties:
+ *               businessProfileId:
+ *                 type: integer
+ *               featureNameId:
+ *                 type: integer
+ *               text:
+ *                 type: string
+ *                 maxLength: 1000
+ *     responses:
+ *       201:
+ *         description: Key feature created successfully
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ *
+ * /keyfeatures/business-profile/{businessProfileId}:
+ *   get:
+ *     summary: Retrieve all key features for a business profile
+ *     description: This endpoint allows a user to retrieve all key features for a specific business profile.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: businessProfileId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved key features
+ *       400:
+ *         description: Invalid business profile ID
+ *       404:
+ *         description: No key features found
+ *       500:
+ *         description: Internal server error
+ *
+ * /keyfeatures/{id}:
+ *   delete:
+ *     summary: Delete a specific key feature
+ *     description: This endpoint allows a user to delete a specific key feature by ID.
+ *     tags: [Feature Names and Key Features]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Key feature deleted successfully
+ *       400:
+ *         description: Invalid feature ID
+ *       404:
+ *         description: Key feature not found
+ *       500:
+ *         description: Internal server error
+ */
