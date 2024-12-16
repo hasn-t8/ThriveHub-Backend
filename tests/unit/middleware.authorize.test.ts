@@ -1,8 +1,8 @@
 import { authorize } from "../../src/middleware/authorize";
 import { Response } from "express";
-import { getPoliciesForUser } from "../../src/models/policy";
+import { getPoliciesForUser } from "../../src/models/policy.models";
 
-jest.mock("../../src/models/policy");
+jest.mock("../../src/models/policy.models");
 
 describe("authorize middleware", () => {
   it("should allow access if user has appropriate policies", async () => {

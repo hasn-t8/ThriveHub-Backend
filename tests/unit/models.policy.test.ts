@@ -1,4 +1,4 @@
-import { attachPolicyToUser, getPoliciesForUser } from "../../src/models/policy";
+import { attachPolicyToUser, getPoliciesForUser } from "../../src/models/policy.models";
 import pool from "../../src/config/db";
 
 describe("Policy Model", () => {
