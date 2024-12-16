@@ -37,9 +37,11 @@ router.use(adminBusinessProfile);
 import uploadLogo from './profiles/upload_logo.routes';
 import businessProfile from './profiles/business-profile.routes';
 import keyFeaturesAndKeyName from './profiles/key-features.routes';
+import businessKeyPoints from './profiles/business-key-points.routes';
 router.use(uploadLogo);
 router.use(businessProfile);
 router.use(keyFeaturesAndKeyName);
+router.use(businessKeyPoints);
 
 
 export default router;
