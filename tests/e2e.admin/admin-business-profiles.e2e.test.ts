@@ -137,7 +137,7 @@ beforeAll(async () => {
   it("should handle internal server errors gracefully", async () => {
     // Temporarily mock `getAllBusinessProfiles` to throw an error
     jest
-      .spyOn(require("../../src/models/business-profile"), "getAllBusinessProfiles")
+      .spyOn(require("../../src/models/business-profile.models"), "getAllBusinessProfiles")
       .mockImplementation(() => {
         throw new Error("Mocked error");
       });
