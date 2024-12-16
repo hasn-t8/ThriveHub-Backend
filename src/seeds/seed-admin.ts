@@ -3,7 +3,7 @@ import { attachPolicyToUser } from "../models/policy";
 
 export const seedAdmin = async (): Promise<void> => {
   const adminEmail = "admin@example.com";
-  const adminPassword = "admin123"; // Replace with a hashed password in production
+  const adminPassword = "someStuff123"; // Replace with a hashed password in production
 
   const admin = await findUserByEmail(adminEmail);
 
