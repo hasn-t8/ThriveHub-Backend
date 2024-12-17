@@ -196,11 +196,12 @@ export const deleteBusinessProfile = async (profileId: number): Promise<void> =>
   }
 };
 
-export const getAllBusinessProfiles = async (): Promise<any[]> => {
+export const getAllBusinessProfiles = async () => {
   const query = `
     SELECT 
-      p.id AS profile_id, 
-      pb.business_website_url, 
+      p.id AS profile_id,
+      pb.id AS business_profile_id,
+      pb.business_website_url,
       pb.org_name, 
       pb.job_title, 
       pb.work_email, 
@@ -220,8 +221,8 @@ export const getAllBusinessProfiles = async (): Promise<any[]> => {
 export const getBusinessProfileByBusinessProfileId = async (businessProfileId: number): Promise<any | null> => {
   const query = `
     SELECT 
-      pb.id AS business_profile_id, 
       p.id AS profile_id, 
+      pb.id AS business_profile_id, 
       pb.business_website_url, 
       pb.org_name, 
       pb.job_title, 
