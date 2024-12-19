@@ -5,7 +5,7 @@ import path from "path";
 import { verifyToken } from "../../middleware/authenticate";
 import { validateBusinessProfileOwnership } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
-
+import { getPoliciesForUser } from "../../models/policy.models";
 
 const router = express.Router();
 
@@ -58,8 +58,22 @@ router.post(
       }
 
       // Validate ownership of the business profile
-      const isValidProfile = await validateBusinessProfileOwnership(userId, parseInt(businessProfileId, 10));
-      if (!isValidProfile) {
+      const isValidProfile = await validateBusinessProfileOwnership(
+        userId,
+        parseInt(businessProfileId, 10)
+      );
+
+      const policies = await getPoliciesForUser(userId);
+
+      console.log("User policies:", policies); // Debugging
+
+      const isAuthorized = policies.some((policy) => {
+        const actionAllowed = policy.actions.includes("*") || policy.actions.includes("*");
+        const resourceAllowed = policy.resources.includes("*") || policy.resources.includes("*");
+        return actionAllowed && resourceAllowed && policy.effect === "Allow";
+      });
+
+      if (!isValidProfile && !isAuthorized) {
         res.status(403).json({ error: "You do not own this business profile" });
         return;
       }
@@ -83,6 +97,8 @@ router.post(
 
       const uploadResult = await s3.upload(params).promise();
 
+      //TODO: upadate DB for the new logo please/
+
       res.status(200).json({
         message: "Logo uploaded successfully",
         url: uploadResult.Location, // Public URL of the uploaded file
@@ -96,7 +112,6 @@ router.post(
 );
 
 export default router;
-
 
 /**
  * @swagger

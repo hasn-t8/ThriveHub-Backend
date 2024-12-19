@@ -9,8 +9,8 @@ const router = Router();
 // Admin route to get all business profiles
 router.get(
   "/admin/businessprofiles",
-  verifyToken,
-  authorize("*", "*"), // Admins should have full access
+  // verifyToken,
+  // authorize("*", "*"), // Admins should have full access
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const allBusinessProfiles = await getAllBusinessProfiles();

@@ -126,6 +126,7 @@ router.put(
       res.status(400).json({ error: "Invalid profile ID" });
       return;
     }
+    console.log('profileData', profileData);
 
     try {
       const updatedProfile = await updateBusinessProfile(profileId, profileData);
