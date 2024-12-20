@@ -1,14 +1,13 @@
 import pool from "../config/db";
 
 export interface Profile {
-    id: number;
-    user_id: number;
-    profile_type: "personal" | "business";
-    created_at: Date;
-    updated_at: Date;
-  }
+  id: number;
+  user_id: number;
+  profile_type: "personal" | "business";
+  created_at: Date;
+  updated_at: Date;
+}
 
-  
 /**
  * Validates if the business profile ID belongs to the user.
  * @param userId The user ID
@@ -64,9 +63,9 @@ export const createBusinessProfile = async (userId: number, data: any) => {
     const newBusinessProfileResult = await client.query(
       `INSERT INTO profiles_business (
         profile_id, business_website_url, org_name, job_title, 
-        work_email, category, logo_url, about_business, work_email_verified
+        work_email, category, logo_url, about_business, work_email_verified, business_website_title
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id`,
       [
         profileId,
@@ -78,6 +77,7 @@ export const createBusinessProfile = async (userId: number, data: any) => {
         data.logo_url,
         data.about_business,
         data.work_email_verified || false,
+        data.business_website_title,
       ]
     );
 
@@ -101,25 +101,32 @@ export const updateBusinessProfile = async (businessProfileId: number, data: any
   try {
     await client.query("BEGIN");
 
-    const businessProfileResult = await client.query(
-      `UPDATE profiles_business 
-       SET business_website_url = $1, org_name = $2, job_title = $3, 
-           work_email = $4, category = $5, logo_url = $6, about_business = $7, 
-           work_email_verified = $8
-       WHERE id = $9
-       RETURNING profile_id, id`,
-      [
-        data.business_website_url,
-        data.org_name,
-        data.job_title,
-        data.work_email,
-        data.category,
-        data.logo_url,
-        data.about_business,
-        data.work_email_verified || false,
-        businessProfileId,
-      ]
-    );
+    // Dynamically construct the SET clause and parameters
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    for (const [key, value] of Object.entries(data)) {
+      fields.push(`${key} = $${index}`);
+      values.push(value);
+      index++;
+    }
+
+    if (fields.length === 0) {
+      throw new Error("No fields to update");
+    }
+
+    // Add the businessProfileId as the last parameter
+    values.push(businessProfileId);
+
+    const query = `
+      UPDATE profiles_business
+      SET ${fields.join(", ")}
+      WHERE id = $${index}
+      RETURNING profile_id, id
+    `;
+
+    const businessProfileResult = await client.query(query, values);
 
     if (businessProfileResult.rowCount === 0) {
       throw new Error("Business profile not found");
@@ -147,7 +154,8 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
       u.email,
       p.id AS profile_id, 
       p.profile_type, 
-      pb.business_website_url, 
+      pb.business_website_url,
+      pb.business_website_title,
       pb.org_name, 
       pb.job_title, 
       pb.work_email, 
@@ -202,6 +210,7 @@ export const getAllBusinessProfiles = async () => {
       p.id AS profile_id,
       pb.id AS business_profile_id,
       pb.business_website_url,
+      pb.business_website_title,
       pb.org_name, 
       pb.job_title, 
       pb.work_email, 
@@ -218,12 +227,15 @@ export const getAllBusinessProfiles = async () => {
   return result.rows;
 };
 
-export const getBusinessProfileByBusinessProfileId = async (businessProfileId: number): Promise<any | null> => {
+export const getBusinessProfileByBusinessProfileId = async (
+  businessProfileId: number
+): Promise<any | null> => {
   const query = `
     SELECT 
       p.id AS profile_id, 
       pb.id AS business_profile_id, 
-      pb.business_website_url, 
+      pb.business_website_url,
+      pb.business_website_title,
       pb.org_name, 
       pb.job_title, 
       pb.work_email, 

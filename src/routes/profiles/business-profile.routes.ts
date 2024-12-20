@@ -126,7 +126,6 @@ router.put(
       res.status(400).json({ error: "Invalid profile ID" });
       return;
     }
-    console.log('profileData', profileData);
 
     try {
       const updatedProfile = await updateBusinessProfile(profileId, profileData);
@@ -202,6 +201,8 @@ export default router;
  *                 properties:
  *                   business_website_url:
  *                     type: string
+ *                   business_website_title:
+ *                     type: string
  *                   org_name:
  *                     type: string
  *                   job_title:
@@ -243,6 +244,7 @@ export default router;
  *                 additionalProperties: true
  *                 example:
  *                   business_website_url: "https://example.com"
+ *                   business_website_title: "Example Website"
  *                   org_name: "Example Org"
  *                   job_title: "CEO"
  *                   work_email: "ceo@example.com"
@@ -291,6 +293,8 @@ export default router;
  *                 profile_id:
  *                   type: integer
  *                 business_website_url:
+ *                   type: string
+ *                 business_website_title:
  *                   type: string
  *                 org_name:
  *                   type: string
@@ -342,6 +346,7 @@ export default router;
  *                   org_name: "Updated Org Name"
  *                   category: "Updated Category"
  *                   business_website_url: "https://updatedwebsite.com"
+ *                   business_website_title: "Updated Website"
  *     responses:
  *       200:
  *         description: Business profile updated successfully

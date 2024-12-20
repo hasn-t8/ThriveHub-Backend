@@ -59,6 +59,9 @@ export default router;
  *                   business_website_url:
  *                     type: string
  *                     description: The website URL of the business
+ *                   business_website_title:
+ *                     type: string
+ *                     description: The website URL title of the business
  *                   org_name:
  *                     type: string
  *                     description: The name of the organization
