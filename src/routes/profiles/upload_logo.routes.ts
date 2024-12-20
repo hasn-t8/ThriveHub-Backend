@@ -3,7 +3,7 @@ import multer from "multer";
 import AWS from "aws-sdk";
 import path from "path";
 import { verifyToken } from "../../middleware/authenticate";
-import { validateBusinessProfileOwnership } from "../../models/business-profile.models";
+import { validateBusinessProfileOwnership, updateBusinessProfile } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import { getPoliciesForUser } from "../../models/policy.models";
 
@@ -96,8 +96,8 @@ router.post(
       };
 
       const uploadResult = await s3.upload(params).promise();
-
-      //TODO: upadate DB for the new logo please/
+      
+      updateBusinessProfile(parseInt(businessProfileId, 10), { logo_url: uploadResult.Location });
 
       res.status(200).json({
         message: "Logo uploaded successfully",
