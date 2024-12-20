@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   api_server:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
@@ -23,7 +23,7 @@ services:
       - port=3000
     command: >
       sh -c "
-      npm run migrate:prod &&
+      npm run migrate:prod && npm run seed &&
       node dist/server.js"
     networks:
       - th_app_shared_network
