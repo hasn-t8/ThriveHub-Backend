@@ -124,7 +124,6 @@ router.post(
 /** --------------------- Get Business Key Points by Business Profile --------------------- */
 router.get(
   "/business-key-points/business-profile/:businessProfileId",
-  verifyToken,
   async (req: AuthenticatedRequest, res: Response) => {
     const businessProfileId = parseInt(req.params.businessProfileId, 10);
 
@@ -145,8 +144,7 @@ router.get(
 
 /** --------------------- Get All Business Key Point Names --------------------- */
 router.get(
-  "/business-key-point-names",
-  verifyToken,
+  "/business-key-point-names/{type}", //TODO: add type AND Implement it
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const keyPointNames = await findAllBusinessKeyPointNames();
@@ -205,3 +203,260 @@ router.delete(
 );
 
 export default router;
+
+/**
+ * @swagger
+ * tags:
+ *   name: Business Key Points
+ *   description: Endpoints for managing business key points for features and why_us
+ *
+ * /business-key-points:
+ *   post:
+ *     summary: Create a new business key point
+ *     tags: [Business Key Points]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               businessProfileId:
+ *                 type: integer
+ *               keyPointNameId:
+ *                 type: integer
+ *               type:
+ *                 type: string
+ *               text:
+ *                 type: string
+ *             example:
+ *               businessProfileId: 1
+ *               keyPointNameId: 2
+ *               type: "feature"
+ *               text: "This is a key point"
+ *     responses:
+ *       201:
+ *         description: Business key point created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 keyPointId:
+ *                   type: integer
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /business-key-points/{id}:
+ *   put:
+ *     summary: Update an existing business key point for features and why_us
+ *     tags: [Business Key Points]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business key point
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               keyPointNameId:
+ *                 type: integer
+ *               type:
+ *                 type: string
+ *               text:
+ *                 type: string
+ *             example:
+ *               keyPointNameId: 2
+ *               type: "why_us"
+ *               text: "Updated key point text"
+ *     responses:
+ *       200:
+ *         description: Business key point updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation error or invalid key point ID
+ *       404:
+ *         description: Key point not found
+ *       500:
+ *         description: Internal server error
+ *
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Business Key Point Names
+ *   description: Endpoints for managing business key points and key point names
+ *
+ * /business-key-point-names:
+ *   post:
+ *     summary: Create a new business key point name
+ *     tags: [Business Key Point Names]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *             example:
+ *               name: "Test Key Point Name"
+ *               type: "feature"
+ *     responses:
+ *       201:
+ *         description: Business key point name created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 keyPointNameId:
+ *                   type: integer
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger 
+ * /business-key-point-names:
+ *   get:
+ *     summary: Get all business key point names
+ *     tags: [Business Key Point Names]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of business key point names
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *       500:
+ *         description: Internal server error
+ *
+ * /business-key-point-names/{id}:
+ *   delete:
+ *     summary: Delete a business key point name
+ *     tags: [Business Key Point Names]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business key point name
+ *     responses:
+ *       200:
+ *         description: Business key point name deleted successfully
+ *       400:
+ *         description: Invalid key point name ID
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /business-key-points/{id}:
+ *   delete:
+ *     summary: Delete a business key point
+ *     tags: [Business Key Points]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business key point
+ *     responses:
+ *       200:
+ *         description: Business key point deleted successfully
+ *       400:
+ *         description: Invalid key point ID
+ *       500:
+ *         description: Internal server error
+ *
+ * /business-key-points/business-profile/{businessProfileId}:
+ *   get:
+ *     summary: Get all business key points for a specific business profile
+ *     tags: [Business Key Points]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: businessProfileId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the business profile
+ *     responses:
+ *       200:
+ *         description: A list of business key points
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   businessProfileId:
+ *                     type: integer
+ *                   keyPointNameId:
+ *                     type: integer
+ *                   type:
+ *                     type: string
+ *                   text:
+ *                     type: string
+ *       400:
+ *         description: Validation error or invalid business profile ID
+ *       500:
+ *         description: Internal server error
+ *
+ */
