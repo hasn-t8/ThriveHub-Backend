@@ -8,6 +8,7 @@ import {
   deleteBusinessKeyPoint,
   deleteBusinessKeyPointName,
   findAllBusinessKeyPointNames,
+  findAllBusinessKeyPointNamesByType,
   findBusinessKeyPointsByBusinessProfile,
   updateBusinessKeyPoint,
 } from "../../models/businessKeyPoints.models";
@@ -143,11 +144,47 @@ router.get(
 );
 
 /** --------------------- Get All Business Key Point Names --------------------- */
+// router.get(
+//   "/business-key-point-names/:type", // Dynamic type parameter is optional
+//   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+//     try {
+//       // Optionally capture the type from the request parameters
+//       const { type } = req.params;
+
+//       // You can optionally log or use the type, but it doesn't affect the result here
+//       if (type) {
+//         console.log(`Request received for type: ${type}`);
+//       }
+
+//       // Fetch all business key point names
+//       const keyPointNames = await findAllBusinessKeyPointNames();
+
+//       res.status(200).json(keyPointNames);
+//     } catch (error) {
+//       console.error("Error fetching business key point names:", error);
+//       res.status(500).json({ error: "Internal Server Error" });
+//     }
+//   }
+// );
 router.get(
-  "/business-key-point-names", //TODO: add type AND Implement it
-  async (_req: AuthenticatedRequest, res: Response) => {
+  "/business-key-point-names/:type", // Dynamic parameter for filtering by type
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const keyPointNames = await findAllBusinessKeyPointNames();
+      const { type } = req.params; // Extract the type from request parameters
+
+      if (!type) {
+        res.status(400).json({ error: "Type parameter is required" });
+        return;
+      }
+
+      // Fetch filtered data by type
+      const keyPointNames = await findAllBusinessKeyPointNamesByType(type);
+
+      if (keyPointNames.length === 0) {
+        res.status(404).json({ error: "No business key point names found for the specified type" });
+        return;
+      }
+
       res.status(200).json(keyPointNames);
     } catch (error) {
       console.error("Error fetching business key point names:", error);

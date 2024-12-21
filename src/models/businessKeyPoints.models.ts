@@ -112,6 +112,19 @@ export const findAllBusinessKeyPointNames = async (): Promise<BusinessKeyPointNa
   return result.rows;
 };
 
+// ------------filter by type----------------
+export const findAllBusinessKeyPointNamesByType = async (type: string): Promise<BusinessKeyPointName[]> => {
+  const result = await pool.query(
+    `
+    SELECT * 
+    FROM business_key_point_names
+    WHERE type = $1
+    `,
+    [type] // Use parameterized query to prevent SQL injection
+  );
+  return result.rows;
+};
+
 /** --------------------- Delete Business Key Point --------------------- */
 export const deleteBusinessKeyPoint = async (keyPointId: number): Promise<void> => {
   const result = await pool.query(
