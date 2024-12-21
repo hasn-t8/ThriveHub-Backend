@@ -144,7 +144,7 @@ router.get(
 
 /** --------------------- Get All Business Key Point Names --------------------- */
 router.get(
-  "/business-key-point-names/{type}", //TODO: add type AND Implement it
+  "/business-key-point-names", //TODO: add type AND Implement it
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const keyPointNames = await findAllBusinessKeyPointNames();
