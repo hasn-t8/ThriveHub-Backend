@@ -153,7 +153,6 @@ router.get(
       let keyPointNames;
 
       if (type) {
-        // Fetch business key point names filtered by type
         keyPointNames = await findAllBusinessKeyPointNamesByType(type);
         if (keyPointNames.length === 0) {
           res
@@ -162,7 +161,6 @@ router.get(
           return;
         }
       } else {
-        // Fetch all business key point names
         keyPointNames = await findAllBusinessKeyPointNames();
         if (keyPointNames.length === 0) {
           res.status(404).json({ error: "No business key point names found" });
