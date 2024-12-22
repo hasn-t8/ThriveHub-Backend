@@ -178,26 +178,29 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
 /**
  * Delete a business profile.
  */
-export const deleteBusinessProfile = async (profileId: number): Promise<void> => {
+export const deleteBusinessProfile = async (businessProfileId: number): Promise<void> => {
+  console.log('deleting >> profileId', businessProfileId);
+  
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     const profileResult = await client.query(
-      "SELECT id FROM profiles WHERE id = $1 AND profile_type = 'business'",
-      [profileId]
+      "SELECT id FROM profiles_business WHERE id = $1",
+      [businessProfileId]
     );
 
     if (profileResult.rowCount === 0) {
-      throw new Error("Profile not found");
+      throw new Error("Business Profile not found");
     }
 
-    await client.query("DELETE FROM profiles_business WHERE profile_id = $1", [profileId]);
-    await client.query("DELETE FROM profiles WHERE id = $1", [profileId]);
+    await client.query("DELETE FROM profiles_business WHERE id = $1", [businessProfileId]);
 
     await client.query("COMMIT");
+    console.log('Successfully deleted business profile with ID:', businessProfileId);
   } catch (error) {
     await client.query("ROLLBACK");
+    console.error('Error deleting business profile:', error);
     throw error;
   } finally {
     client.release();

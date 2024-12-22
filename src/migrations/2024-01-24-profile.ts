@@ -22,7 +22,7 @@ export const up = async (pool: Pool) => {
     -- Create profiles_business table
     CREATE TABLE IF NOT EXISTS profiles_business (
       id SERIAL PRIMARY KEY,
-      profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      profile_id INTEGER,
       business_website_url VARCHAR(255),
       org_name VARCHAR(255) NOT NULL,
       job_title VARCHAR(255),
