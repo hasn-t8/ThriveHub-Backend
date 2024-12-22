@@ -143,46 +143,31 @@ router.get(
   }
 );
 
-/** --------------------- Get All Business Key Point Names --------------------- */
-// router.get(
-//   "/business-key-point-names/:type", // Dynamic type parameter is optional
-//   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-//     try {
-//       // Optionally capture the type from the request parameters
-//       const { type } = req.params;
-
-//       // You can optionally log or use the type, but it doesn't affect the result here
-//       if (type) {
-//         console.log(`Request received for type: ${type}`);
-//       }
-
-//       // Fetch all business key point names
-//       const keyPointNames = await findAllBusinessKeyPointNames();
-
-//       res.status(200).json(keyPointNames);
-//     } catch (error) {
-//       console.error("Error fetching business key point names:", error);
-//       res.status(500).json({ error: "Internal Server Error" });
-//     }
-//   }
-// );
+/** --------------------- Get All Business Key Point Names with or without type --------------------- */
 router.get(
   "/business-key-point-names/:type", // Dynamic parameter for filtering by type
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const { type } = req.params; // Extract the type from request parameters
+      const { type } = req.params;
 
-      if (!type) {
-        res.status(400).json({ error: "Type parameter is required" });
-        return;
-      }
+      let keyPointNames;
 
-      // Fetch filtered data by type
-      const keyPointNames = await findAllBusinessKeyPointNamesByType(type);
-
-      if (keyPointNames.length === 0) {
-        res.status(404).json({ error: "No business key point names found for the specified type" });
-        return;
+      if (type) {
+        // Fetch business key point names filtered by type
+        keyPointNames = await findAllBusinessKeyPointNamesByType(type);
+        if (keyPointNames.length === 0) {
+          res
+            .status(404)
+            .json({ error: "No business key point names found for the specified type" });
+          return;
+        }
+      } else {
+        // Fetch all business key point names
+        keyPointNames = await findAllBusinessKeyPointNames();
+        if (keyPointNames.length === 0) {
+          res.status(404).json({ error: "No business key point names found" });
+          return;
+        }
       }
 
       res.status(200).json(keyPointNames);
@@ -387,7 +372,7 @@ export default router;
  */
 
 /**
- * @swagger 
+ * @swagger
  * /business-key-point-names:
  *   get:
  *     summary: Get all business key point names
@@ -412,6 +397,42 @@ export default router;
  *                     type: string
  *       500:
  *         description: Internal server error
+ * /business-key-point-names/{type}:
+ *   get:
+ *     summary: Get all business key point names, optionally filtered by type
+ *     tags: [Business Key Point Names]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: type
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: The type of key points to filter by (e.g., 'feature', 'why_us')
+ *     responses:
+ *       200:
+ *         description: A list of business key point names
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *       400:
+ *         description: Validation error or invalid type parameter
+ *       404:
+ *         description: No business key point names found
+ *       500:
+ *         description: Internal server error
+ *
  *
  * /business-key-point-names/{id}:
  *   delete:

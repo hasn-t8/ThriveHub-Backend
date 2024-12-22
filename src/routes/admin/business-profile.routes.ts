@@ -22,7 +22,7 @@ router.get(
 
       res.status(200).json(allBusinessProfiles);
     } catch (error) {
-      console.error("Error fetching all business profiles:", error);
+      console.error("Error fetching all business profiles.");
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
