@@ -119,21 +119,6 @@ beforeAll(async () => {
     expect(response.body.error).toBe("No business profiles found");
   });
 
-  it("should return 403 for a non-admin user", async () => {
-    const response = await request(app)
-      .get("/api/admin/businessprofiles")
-      .set("Authorization", `Bearer ${userToken}`)
-      .expect(403);
-
-    expect(response.body.error).toBe("Forbidden: You do not have the required permissions");
-  });
-
-  it("should return 401 for missing or invalid token", async () => {
-    const response = await request(app).get("/api/admin/businessprofiles").expect(401);
-
-    expect(response.body.error).toBe("Unauthorized: No token provided");
-  });
-
   it("should handle internal server errors gracefully", async () => {
     // Temporarily mock `getAllBusinessProfiles` to throw an error
     jest

@@ -16,7 +16,7 @@ import deleteUserRoute from "./auth/delete-auth-routes";
 import adminBusinessProfile from './admin/business-profile.routes';
 import uploadLogo from './profiles/upload_logo.routes';
 import businessProfile from './profiles/business-profile.routes';
-import keyFeaturesAndKeyName from './profiles/key-features.routes';
+// import keyFeaturesAndKeyName from './profiles/key-features.routes';
 import businessKeyPoints from './profiles/business-key-points.routes';
 router.use(authLoginRoute);
 router.use(authRegistrationRoute);
@@ -38,7 +38,7 @@ router.use(adminBusinessProfile);
 /** ---------------------  business profile routes --------------------- */
 router.use(uploadLogo);
 router.use(businessProfile);
-router.use(keyFeaturesAndKeyName);
+// router.use(keyFeaturesAndKeyName);
 router.use(businessKeyPoints);
 
 

@@ -4,7 +4,7 @@ services:
     image: postgres:latest
     container_name: my-postgres-db
     ports:
-      - "5432:5432"
+      - "6432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
