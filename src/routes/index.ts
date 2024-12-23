@@ -18,6 +18,8 @@ import uploadLogo from './profiles/upload_logo.routes';
 import businessProfile from './profiles/business-profile.routes';
 // import keyFeaturesAndKeyName from './profiles/key-features.routes';
 import businessKeyPoints from './profiles/business-key-points.routes';
+import personalProfileImage from './profiles/personal-profile-image-upload.routes';
+
 router.use(authLoginRoute);
 router.use(authRegistrationRoute);
 router.use(verifyJwtTokenRoute);
@@ -31,6 +33,7 @@ router.use(changePasswordRoute);
 router.use(createProfile);
 router.use(analyticsBusinessProfileViews);
 router.use(deleteUserRoute);
+router.use(personalProfileImage);
 
 /** ---------------------  admin routes --------------------- */
 router.use(adminBusinessProfile);
