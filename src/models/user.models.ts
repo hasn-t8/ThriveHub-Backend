@@ -15,7 +15,14 @@ export interface User {
 /** --------------------- Find User By Email --------------------- */
 export const findUserByEmail = async (
   email: string
-): Promise<User & { userTypes: string[]; city: string | null; profileImage: string | null } | null> => {
+): Promise<
+  | (User & {
+      userTypes: string[];
+      city: string | null;
+      profileImage: string | null;
+    })
+  | null
+> => {
   const result = await pool.query(
     `
     SELECT 
@@ -54,11 +61,19 @@ export const findUserByEmail = async (
   };
 };
 
-
 /** --------------------- Find User By ID --------------------- */
-export const findUserById = async (userId: number):  Promise<User & { userTypes: string[]; city: string | null; profileImage: string | null } | null> => {
-const result = await pool.query(
-  `
+export const findUserById = async (
+  userId: number
+): Promise<
+  | (User & {
+      userTypes: string[];
+      city: string | null;
+      profileImage: string | null;
+    })
+  | null
+> => {
+  const result = await pool.query(
+    `
   SELECT 
     u.*,
     COALESCE(json_agg(ut.type) FILTER (WHERE ut.type IS NOT NULL), '[]') AS user_types,
@@ -79,20 +94,20 @@ const result = await pool.query(
   GROUP BY 
     u.id, pp.address_city, pp.img_profile_url
   `,
-  [userId]
-);
+    [userId]
+  );
 
-if (result.rows.length === 0) {
-  return null;
-}
+  if (result.rows.length === 0) {
+    return null;
+  }
 
-const user = result.rows[0];
-return {
-  ...user,
-  userTypes: user.user_types,
-  city: user.city || null,
-  profileImage: user.profile_image || null,
-};
+  const user = result.rows[0];
+  return {
+    ...user,
+    userTypes: user.user_types,
+    city: user.city || null,
+    profileImage: user.profile_image || null,
+  };
 };
 
 /** --------------------- Create User --------------------- */
@@ -105,7 +120,7 @@ export const createUser = async (
 
   const result = await pool.query(
     `INSERT INTO users (email, password, token_version, is_active, full_name) 
-     VALUES ($1, $2, 0, true, $3) RETURNING id`,
+     VALUES ($1, $2, 0, false, $3) RETURNING id`,
     [email, hashedPassword, full_name]
   );
   return result.rows[0].id;
@@ -187,19 +202,21 @@ export const updatePassword = async (
   ]);
 };
 
-
 /**
  * Updates the full_name in the users table for a given user ID.
  * @param userId The user ID
  * @param fullName The new full name
  */
-export async function updateUserFullName(userId: number, fullName: string): Promise<void> {
+export async function updateUserFullName(
+  userId: number,
+  fullName: string
+): Promise<void> {
   const query = `
     UPDATE users
     SET full_name = $1
     WHERE id = $2
   `;
-  
+
   try {
     await pool.query(query, [fullName, userId]);
     console.log(`User full name updated to: ${fullName} for userId: ${userId}`);
@@ -215,7 +232,6 @@ export const deleteUser = async (userId: number): Promise<void> => {
     const result = await pool.query("DELETE FROM users WHERE id = $1", [
       userId,
     ]);
-    
     if (result.rowCount === 0) {
       throw new Error(`User with ID ${userId} not found.`);
     }

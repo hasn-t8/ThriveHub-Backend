@@ -1,10 +1,14 @@
 import { Router, Request, Response } from "express";
 import { findUserByEmail, activateUser } from "../../models/user.models";
+import { sendMail } from "../../helpers/mailgun.helper";
 import pool from "../../config/db";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";
 import crypto from "crypto";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
+
+const NODE_ENV = process.env.NODE_ENV || "development";
+const IS_DEVLOPMENT = NODE_ENV === "development";
 
 const router = Router();
 
@@ -45,12 +49,10 @@ router.post(
         [userId, newCode]
       );
 
-      res
-        .status(200)
-        .json({
-          message: "New verification code sent successfully",
-          code: newCode,
-        });
+      res.status(200).json({
+        message: "New verification code sent successfully",
+        code: newCode,
+      });
     } catch (error) {
       console.error("Error requesting new verification code:", error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -126,6 +128,11 @@ router.post(
         return;
       }
 
+      if (user.is_active) {
+        res.status(400).json({ error: "User is already active" });
+        return;
+      }
+
       const result = await pool.query(
         "SELECT code FROM user_verification WHERE user_id = $1",
         [user.id]
@@ -136,9 +143,26 @@ router.post(
         return;
       }
 
-      console.log("result.rows[0].code", result.rows[0].code);
+      const verificationCode = result.rows[0].code;
 
-      res.status(200).json({ verificationCode: result.rows[0].code });
+      if (IS_DEVLOPMENT) {
+        console.log("result.rows[0].code", result.rows[0].code);
+        res.status(200).json({ verificationCode, user });
+      } else {
+        const emailVariables = {
+          full_name: user.full_name,
+          email_verification_code: verificationCode,
+        };
+
+        // Send activation email
+        await sendMail(
+          email,
+          "Welcome to ThriveHub",
+          "welcome email",
+          emailVariables
+        );
+        res.status(200).json({ message: "verification code sent" });
+      }
     } catch (error) {
       console.error("Error fetching verification code:", error);
       res.status(500).json({ error: "Internal Server Error" });
