@@ -73,7 +73,7 @@ router.post(
         return actionAllowed && resourceAllowed && policy.effect === "Allow";
       });
 
-      if (!isValidProfile || !isAuthorized) {
+      if (!isValidProfile && !isAuthorized) {
         res.status(403).json({ error: "You do not own this business profile" });
         return;
       }
