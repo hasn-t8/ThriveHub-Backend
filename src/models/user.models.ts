@@ -182,7 +182,7 @@ export const saveVerificationCode = async (
 /** --------------------- Password Reset - save token --------------------- */
 export const saveResetToken = async (
   userId: number,
-  resetToken: string
+  resetToken: number
 ): Promise<void> => {
   await pool.query(
     `INSERT INTO password_resets (user_id, token, created_at) VALUES ($1, $2, NOW())
