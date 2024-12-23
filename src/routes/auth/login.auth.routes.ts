@@ -59,6 +59,8 @@ router.post(
         email: user.email,
         tokenVersion: user.token_version,
         userTypes: user.userTypes,
+        city: user.city,
+        profileImage: user.profileImage,
       };
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
