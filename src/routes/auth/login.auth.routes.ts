@@ -58,13 +58,16 @@ router.post(
         id: user.id,
         email: user.email,
         tokenVersion: user.token_version,
+        userTypes: user.userTypes,
+        city: user.city,
+        profileImage: user.profileImage,
       };
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
       console.log('Login successful', token);
       
-      res.status(200).json({ message: "Login successful", token });
+      res.status(200).json({ message: "Login successful", token, user: payload });
       return;
     } catch (error) {
       console.error("Error during login:", error);
