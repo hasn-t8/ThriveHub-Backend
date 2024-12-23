@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-
+import { sendMail } from "../../helpers/mailgun.helper";
 import { createUser, findUserByEmail, assignUserTypes, saveVerificationCode, findUserById } from "../../models/user.models";
 import { createBusinessProfile } from "../../models/business-profile.models";
 import { check, validationResult } from "express-validator";
@@ -77,6 +77,19 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       city: user.city,
       profileImage: user.profileImage,
     };
+
+    const emailVariables = {
+      full_name: full_name,
+      email_verification_code: verificationCode,
+    };
+
+    // Send activation email
+    await sendMail(
+      email,
+      "Welcome to ThriveHub",
+      "welcome email",
+      emailVariables
+    );
 
     res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile });
     return;
