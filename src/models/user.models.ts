@@ -13,11 +13,35 @@ export interface User {
 }
 
 /** --------------------- Find User By Email --------------------- */
-export const findUserByEmail = async (email: string): Promise<User | null> => {
-  const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-    email,
-  ]);
-  return result.rows[0] || null;
+export const findUserByEmail = async (email: string): Promise<User & { userTypes: string[] } | null> => {
+  const result = await pool.query(
+    `
+    SELECT 
+      u.*,
+      COALESCE(json_agg(ut.type) FILTER (WHERE ut.type IS NOT NULL), '[]') AS user_types
+    FROM 
+      users u
+    LEFT JOIN 
+      user_user_types uut ON u.id = uut.user_id
+    LEFT JOIN 
+      user_types ut ON uut.type_id = ut.id
+    WHERE 
+      u.email = $1
+    GROUP BY 
+      u.id
+    `,
+    [email]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const user = result.rows[0];
+  return {
+    ...user,
+    userTypes: user.user_types,
+  };
 };
 
 /** --------------------- Find User By ID --------------------- */
