@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 
 import { createUser, findUserByEmail, assignUserTypes, saveVerificationCode, findUserById } from "../../models/user.models";
+import { createBusinessProfile } from "../../models/business-profile.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
 
@@ -21,9 +22,14 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
     return;
   }
 
-  const { email, password, types, full_name } = req.body;
+  const { email, password, types, full_name, org_name, job_title, business_website_url } = req.body;
 
   try {
+    if (types.includes("business-owner") && !org_name && !job_title && !business_website_url) {
+      res.status(400).json({ error: "Business owner profile details are required. Such as org_name, job_title, and business_website_url" });
+      return;
+    }
+
     // Check if email already exists
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
@@ -52,6 +58,16 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       return;
     }
 
+    let businessProfile = null;
+    if (types.includes("business-owner") && (org_name || job_title || business_website_url)) {
+      businessProfile = await createBusinessProfile(userId, {
+        business_website_url,
+        org_name,
+        job_title,
+        work_email: email,
+      });
+    }
+
     const userDeatils = {
       id: user.id,
       email: user.email,
@@ -62,7 +78,7 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       profileImage: user.profileImage,
     };
 
-    res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils });
+    res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile });
     return;
   } catch (error) {
     console.error("Error registering user:", error);
@@ -106,7 +122,24 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
  *                 items:
  *                   type: string
  *                 description: An array of user types.
- *                 example: ["registered-user", "business-owner", "team-member"]
+ *                 example: ["registered-user", "business-owner"]
+ *               full_name:
+ *                 type: string
+ *                 description: The full name of the user.
+ *                 example: "John Doe"
+ *               org_name:
+ *                 type: string
+ *                 description: The organization name (required if the user is a business owner).
+ *                 example: "TechCorp"
+ *               job_title:
+ *                 type: string
+ *                 description: The job title of the user (required if the user is a business owner).
+ *                 example: "CEO"
+ *               business_website_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: The website URL of the business (required if the user is a business owner).
+ *                 example: "https://techcorp.com"
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -117,7 +150,38 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
  *               properties:
  *                 message:
  *                   type: string
- *                   example: User registered successfully
+ *                   example: "User registered successfully 1234"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: The ID of the user.
+ *                     email:
+ *                       type: string
+ *                       description: The email of the user.
+ *                     full_name:
+ *                       type: string
+ *                       description: The full name of the user.
+ *                     tokenVersion:
+ *                       type: integer
+ *                       description: The token version for the user.
+ *                     userTypes:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                       description: The user types associated with the user.
+ *                     city:
+ *                       type: string
+ *                       description: The city of the user (if available).
+ *                     profileImage:
+ *                       type: string
+ *                       format: uri
+ *                       description: The profile image URL of the user (if available).
+ *                 businessProfile:
+ *                   type: object
+ *                   nullable: true
+ *                   description: The business profile details (if applicable).
  *       400:
  *         description: Validation errors
  *         content:
@@ -133,7 +197,7 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
  *                       msg:
  *                         type: string
  *                         description: Error message
- *                         example: Password must be at least 6 characters
+ *                         example: "Password must be at least 6 characters"
  *       409:
  *         description: Conflict error (email already exists)
  *         content:
@@ -153,7 +217,7 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Internal Server Error
- * */
+ *                   example: "Internal Server Error"
+ */
 
 export default router;
