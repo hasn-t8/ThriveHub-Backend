@@ -1,11 +1,6 @@
 import { Router, Request, Response } from "express";
 
-import {
-  createUser,
-  findUserByEmail,
-  assignUserTypes,
-  saveVerificationCode,
-} from "../../models/user.models";
+import { createUser, findUserByEmail, assignUserTypes, saveVerificationCode, findUserById } from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
 
@@ -14,60 +9,67 @@ const router = Router();
 // Validation middleware for the "register" route
 const validateRegister = [
   check("email").isEmail().withMessage("Email must be valid"),
-  check("password")
-    .isLength({ min: 6 })
-    .withMessage("Password must be at least 6 characters"),
-  check("types")
-    .isArray({ min: 1 })
-    .withMessage("Types must be an array with at least one element"),
+  check("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters"),
+  check("types").isArray({ min: 1 }).withMessage("Types must be an array with at least one element"),
   check("types.*").isString().withMessage("Each type must be a string"),
 ];
 
-router.post(
-  "/auth/register",
-  validateRegister,
-  async (req: Request, res: Response): Promise<void> => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-
-    const { email, password, types, full_name } = req.body;
-
-    try {
-      // Check if email already exists
-      const existingUser = await findUserByEmail(email);
-      if (existingUser) {
-        res.status(409).json({ error: "Conflict: Email already exists" });
-        return;
-      }
-
-      // Create the user and get their ID
-      const userId = await createUser(email, password, full_name);
-
-      // Assign user types
-      await assignUserTypes(userId, types);
-
-      // Generate a 4-digit verification code
-      const verificationCode = crypto.randomInt(1000, 9999);
-
-      // Save the verification code
-      await saveVerificationCode(userId, verificationCode);
-
-      // console.log("New User registered with the verificationCode: " + verificationCode);
-
-      res
-        .status(201)
-        .json({ message: `User registered successfully ${verificationCode}` });
-      return;
-    } catch (error) {
-      console.error("Error registering user:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
-    }
+router.post("/auth/register", validateRegister, async (req: Request, res: Response): Promise<void> => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
   }
-);
+
+  const { email, password, types, full_name } = req.body;
+
+  try {
+    // Check if email already exists
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
+      res.status(409).json({ error: "Conflict: Email already exists" });
+      return;
+    }
+
+    // Create the user and get their ID
+    const userId = await createUser(email, password, full_name);
+
+    // Assign user types
+    await assignUserTypes(userId, types);
+
+    // Generate a 4-digit verification code
+    const verificationCode = crypto.randomInt(1000, 9999);
+
+    // Save the verification code
+    await saveVerificationCode(userId, verificationCode);
+
+    // console.log("New User registered with the verificationCode: " + verificationCode);
+
+    const user = await findUserById(userId);
+
+    if (!user) {
+      res.status(500).json({ error: "User registration failed. Internal Server Error" });
+      return;
+    }
+
+    const userDeatils = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      tokenVersion: user.token_version,
+      userTypes: user.userTypes,
+      city: user.city,
+      profileImage: user.profileImage,
+    };
+
+    res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils });
+    return;
+  } catch (error) {
+    console.error("Error registering user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+    return;
+  }
+});
 
 /**
  * @swagger

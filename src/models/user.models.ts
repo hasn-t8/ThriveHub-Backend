@@ -56,11 +56,43 @@ export const findUserByEmail = async (
 
 
 /** --------------------- Find User By ID --------------------- */
-export const findUserById = async (userId: number): Promise<User | null> => {
-  const result = await pool.query("SELECT * FROM users WHERE id = $1", [
-    userId,
-  ]);
-  return result.rows[0] || null;
+export const findUserById = async (userId: number):  Promise<User & { userTypes: string[]; city: string | null; profileImage: string | null } | null> => {
+const result = await pool.query(
+  `
+  SELECT 
+    u.*,
+    COALESCE(json_agg(ut.type) FILTER (WHERE ut.type IS NOT NULL), '[]') AS user_types,
+    pp.address_city AS city,
+    pp.img_profile_url AS profile_image
+  FROM 
+    users u
+  LEFT JOIN 
+    user_user_types uut ON u.id = uut.user_id
+  LEFT JOIN 
+    user_types ut ON uut.type_id = ut.id
+  LEFT JOIN 
+    profiles p ON p.user_id = u.id AND p.profile_type = 'personal'
+  LEFT JOIN 
+    profiles_personal pp ON p.id = pp.profile_id
+  WHERE 
+    u.id = $1
+  GROUP BY 
+    u.id, pp.address_city, pp.img_profile_url
+  `,
+  [userId]
+);
+
+if (result.rows.length === 0) {
+  return null;
+}
+
+const user = result.rows[0];
+return {
+  ...user,
+  userTypes: user.user_types,
+  city: user.city || null,
+  profileImage: user.profile_image || null,
+};
 };
 
 /** --------------------- Create User --------------------- */
