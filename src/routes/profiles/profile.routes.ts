@@ -60,7 +60,7 @@ router.post(
     }
 
     const userId = req.user?.id;
-    const { profileType, profileData, fullName, business_profile_id } = req.body;
+    const { profileData, fullName } = req.body;
 
     if (userId === undefined) {
       res.status(400).json({ error: "User ID is required" });
@@ -81,7 +81,6 @@ router.post(
 );
 
 export default router;
-
 /**
  * @swagger
  * tags:
@@ -137,7 +136,7 @@ export default router;
  *                     description: The website URL of the business (business profile)
  *                   business_website_title:
  *                     type: string
- *                     description: The website URL title of the business
+ *                     description: The title of the website URL (business profile)
  *                   org_name:
  *                     type: string
  *                     description: The name of the organization (business profile)
@@ -159,6 +158,9 @@ export default router;
  *                   work_email_verified:
  *                     type: boolean
  *                     description: Whether the work email is verified (business profile)
+ *                   full_name:
+ *                     type: string
+ *                     description: The full name of the user
  *       400:
  *         description: User ID is required
  *       404:
@@ -198,6 +200,18 @@ export default router;
  *                   address_city: "Techville"
  *                   address_zip_code: "12345"
  *                   img_profile_url: "https://example.com/profile.jpg"
+ *                   business_website_url: "https://businesswebsite.com"
+ *                   business_website_title: "Business Website Title"
+ *                   org_name: "Example Org"
+ *                   job_title: "CEO"
+ *                   work_email: "ceo@example.com"
+ *                   category: "Technology"
+ *                   logo_url: "https://example.com/logo.png"
+ *                   about_business: "Leading technology company."
+ *               fullName:
+ *                 type: string
+ *                 description: The full name of the user
+ *                 example: "John Doe"
  *     responses:
  *       200:
  *         description: Profile updated
