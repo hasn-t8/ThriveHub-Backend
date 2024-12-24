@@ -56,7 +56,7 @@ router.post(
           "Recover Password",
           emailVariables
         );
-        res.status(200).json({ message: "password recovery token sent" });
+        res.status(200).json({ message: "Password reset token sent successfully" });
       }
     } catch (error) {
       console.error("Error in Forgot Password:", error);

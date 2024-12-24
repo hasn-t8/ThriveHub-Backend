@@ -23,7 +23,7 @@ describe('User Registration E2E Test', () => {
     const userPayload = {
       email: testUserEmail,
       password: 'securepassword',
-      types: ['registered-user', 'business-owner'],
+      types: ['registered-user', 'team-member']
     };
 
     const response = await request(app)
@@ -31,7 +31,7 @@ describe('User Registration E2E Test', () => {
       .send(userPayload)
       .expect(201);
 
-  expect(response.body.message).toContain('User registered successfully');
+    expect(response.body.message).toContain('User registered successfully');
 
     // Verify user exists in the database
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [userPayload.email]);
@@ -49,7 +49,7 @@ describe('User Registration E2E Test', () => {
        WHERE u.email = $1`,
       [userPayload.email]
     );
-
+    
     const assignedTypes = userTypesResult.rows.map((row) => row.type);
     expect(assignedTypes).toEqual(expect.arrayContaining(userPayload.types));
   });

@@ -134,6 +134,8 @@ describe("Business Profiles Endpoints", () => {
       [userId]
     );
     const tempProfileId = tempProfileResult.rows[0].id;
+    console.log('tempProfileId', tempProfileId);
+    
 
     await pool.query(
       `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Temp Organization', 'Temp Category')`,
@@ -144,6 +146,9 @@ describe("Business Profiles Endpoints", () => {
       .delete(`/api/businessprofiles/${tempProfileId}`)
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
+
+      console.log('response', response.body);
+      
 
     expect(response.body).toHaveProperty("message", "Business profile deleted successfully");
 
