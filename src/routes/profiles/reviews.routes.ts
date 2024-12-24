@@ -2,9 +2,11 @@ import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
+import { getPoliciesForUser } from "../../models/policy.models";
 import {
   createReview,
   updateReview,
+  checkReviewOwnership,
   getReviewsForBusiness,
   deleteReview,
 } from "../../models/reviews.models";
@@ -92,9 +94,14 @@ router.put(
       return;
     }
 
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
     const reviewId = parseInt(req.params.reviewId, 10);
     const { rating, feedback } = req.body;
-    const userId = req.user?.id;
 
     if (isNaN(reviewId)) {
       res.status(400).json({ error: "Invalid Review ID" });
@@ -102,6 +109,17 @@ router.put(
     }
 
     try {
+      // Check ownership
+      const isOwner = await checkReviewOwnership(reviewId, userId);
+
+      if (!isOwner) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to update this review" });
+        return;
+      }
+
+      // Proceed to update the review
       await updateReview(reviewId, userId, rating, feedback);
       res.status(200).json({ message: "Review updated successfully" });
     } catch (error) {
@@ -122,15 +140,35 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const reviewId = parseInt(req.params.reviewId, 10);
     const userId = req.user?.id;
-
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
     if (isNaN(reviewId)) {
       res.status(400).json({ error: "Invalid Review ID" });
       return;
     }
 
     try {
-      await deleteReview(reviewId, userId);
+      // Check ownership
+      const isOwner = await checkReviewOwnership(reviewId, userId);
+      const policies = await getPoliciesForUser(userId);
+      const isAuthorized = policies.some((policy) => {
+        const actionAllowed = policy.actions.includes("*") || policy.actions.includes("*");
+        const resourceAllowed = policy.resources.includes("*") || policy.resources.includes("*");
+        return actionAllowed && resourceAllowed && policy.effect === "Allow";
+      });
+      if (!isOwner && !isAuthorized) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to delete this review" });
+        return;
+      }
+
+      // Proceed to delete
+      await deleteReview(reviewId);
       res.status(200).json({ message: "Review deleted successfully" });
+
     } catch (error) {
       if (error instanceof Error && error.message === "Review not found") {
         res.status(404).json({ error: "Review not found" });
