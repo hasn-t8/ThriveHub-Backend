@@ -25,10 +25,7 @@ export const createReview = async (
   rating: number,
   feedback: string
 ): Promise<number> => {
-  const userResult = await pool.query(
-    `SELECT full_name FROM users WHERE id = $1`,
-    [userId]
-  );
+  const userResult = await pool.query(`SELECT full_name FROM users WHERE id = $1`, [userId]);
   if (userResult.rowCount === 0) {
     throw new Error("User not found");
   }
@@ -51,9 +48,7 @@ export const createReview = async (
  * Update the average rating and total reviews for a business.
  * @param businessId The business ID
  */
-export const updateBusinessRatings = async (
-  businessId: number
-): Promise<void> => {
+export const updateBusinessRatings = async (businessId: number): Promise<void> => {
   const result = await pool.query(
     `SELECT AVG(rating)::NUMERIC(10,0) AS avg_rating, COUNT(*) AS total_reviews
      FROM reviews
@@ -134,9 +129,7 @@ export const updateReview = async (
  * @param businessId The business ID
  * @returns A list of reviews
  */
-export const getReviewsForBusiness = async (
-  businessId: number
-): Promise<Review[]> => {
+export const getReviewsForBusiness = async (businessId: number): Promise<Review[]> => {
   const result = await pool.query(
     `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name
      FROM reviews
@@ -154,13 +147,8 @@ export const getReviewsForBusiness = async (
  * @param userId The user ID
  * @returns True if the user is the owner, otherwise false
  */
-export const checkReviewOwnership = async (
-  reviewId: number,
-  userId: number
-): Promise<boolean> => {
-  const result = await pool.query(`SELECT user_id FROM reviews WHERE id = $1`, [
-    reviewId,
-  ]);
+export const checkReviewOwnership = async (reviewId: number, userId: number): Promise<boolean> => {
+  const result = await pool.query(`SELECT user_id FROM reviews WHERE id = $1`, [reviewId]);
 
   if (result.rowCount === 0) {
     throw new Error("Review not found");
@@ -178,10 +166,9 @@ export const deleteReview = async (reviewId: number): Promise<void> => {
   try {
     await client.query("BEGIN");
 
-    const reviewResult = await client.query(
-      `SELECT business_id FROM reviews WHERE id = $1`,
-      [reviewId]
-    );
+    const reviewResult = await client.query(`SELECT business_id FROM reviews WHERE id = $1`, [
+      reviewId,
+    ]);
 
     if (reviewResult.rowCount === 0) {
       throw new Error("Review not found");

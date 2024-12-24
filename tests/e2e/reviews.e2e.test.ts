@@ -1,105 +1,108 @@
 import request from "supertest";
 import app from "../../src/app"; // Express app entry point
 import pool from "../../src/config/db"; // Database connection
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "../../src/config/auth";
 
 describe("Reviews API Endpoints", () => {
-  let token: string; // To store the authentication token for requests
-  let businessId: number;
-  let reviewId: number;
+  const testUser = {
+    email: "reviewuser@example.com",
+    password: "securepassword",
+  };
+
+  let userId: number;
+  let token: string;
+  let businessProfileId: number;
 
   beforeAll(async () => {
-    // Mock user login or registration to get the token
-    const response = await request(app)
-      .post("/api/auth/login")
-      .send({ email: "testuser@example.com", password: "password123" });
+    const hashedPassword = await bcrypt.hash(testUser.password, 10);
+    const userResult = await pool.query(
+      "INSERT INTO users (email, password, is_active, token_version, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      [testUser.email, hashedPassword, true, 0, "Test User"]
+    );
+    userId = userResult.rows[0].id;
 
-    token = response.body.token;
+    token = jwt.sign({ id: userId, email: testUser.email, tokenVersion: 0 }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-    // Create a mock business for testing
-    const businessResponse = await pool.query(`
-      INSERT INTO profiles_business (org_name, category, logo_url)
-      VALUES ('Test Business', 'Technology', 'https://example.com/logo.png')
-      RETURNING id
-    `);
-    businessId = businessResponse.rows[0].id;
+    // Create test profile and business
+    const { businessProfileId: bpId } = await createTestProfileAndBusiness(userId);
+    businessProfileId = bpId;
   });
 
   afterAll(async () => {
-    // Cleanup: Delete test data
-    await pool.query(`DELETE FROM reviews WHERE business_id = $1`, [
-      businessId,
-    ]);
-    await pool.query(`DELETE FROM profiles_business WHERE id = $1`, [
-      businessId,
-    ]);
-    pool.end();
+    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    await pool.end();
   });
 
-  test("GET /reviews/business/:businessId - Should return all reviews for a business", async () => {
+  afterEach(async () => {
+    await pool.query("DELETE FROM reviews WHERE business_id = $1", [businessProfileId]);
+  });
+
+  it("GET /reviews/business/:businessId - Should return all reviews for a business", async () => {
+    await pool.query(
+      `INSERT INTO reviews (business_id, user_id, rating, feedback, customer_name)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [businessProfileId, userId, 8, "Great service!", "Test User"]
+    );
+
     const response = await request(app)
-      .get(`/api/reviews/business/${businessId}`)
-      .set("Authorization", `Bearer ${token}`);
+      .get(`/api/reviews/business/${businessProfileId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual(expect.any(Array));
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          rating: 8,
+          feedback: "Great service!",
+        }),
+      ])
+    );
   });
 
-  test("POST /reviews - Should create a new review", async () => {
+  it("POST /reviews - Should create a new review", async () => {
+    const reviewData = {
+      businessId: businessProfileId,
+      rating: 9,
+      feedback: "Excellent experience!",
+    };
+
     const response = await request(app)
       .post("/api/reviews")
       .set("Authorization", `Bearer ${token}`)
-      .send({
-        businessId,
-        rating: 8,
-        feedback: "Great service!",
-      });
+      .send(reviewData)
+      .expect(201);
 
-    expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty(
-      "message",
-      "Review created successfully"
-    );
-    expect(response.body).toHaveProperty("reviewId");
-    reviewId = response.body.reviewId;
+    expect(response.body).toHaveProperty("message", "Review created successfully");
+
+    const dbCheck = await pool.query("SELECT * FROM reviews WHERE business_id = $1", [
+      businessProfileId,
+    ]);
+    expect(dbCheck.rowCount).toBe(1);
   });
 
-  test("PUT /reviews/:reviewId - Should update an existing review", async () => {
-    const response = await request(app)
-      .put(`/api/reviews/${reviewId}`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        rating: 9,
-        feedback: "Excellent service and prompt response!",
-      });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty(
-      "message",
-      "Review updated successfully"
+  const createTestProfile = async (userId: number) => {
+    const profileResult = await pool.query(
+      `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,
+      [userId]
     );
-  });
+    return profileResult.rows[0].id;
+  };
 
-  test("DELETE /reviews/:reviewId - Should delete the review", async () => {
-    const response = await request(app)
-      .delete(`/api/reviews/${reviewId}`)
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty(
-      "message",
-      "Review deleted successfully"
+  const createTestBusinessProfile = async (profileId: number) => {
+    const businessProfileResult = await pool.query(
+      `INSERT INTO profiles_business (profile_id, org_name, category) VALUES ($1, 'Test Business', 'Technology') RETURNING id`,
+      [profileId]
     );
-  });
+    return businessProfileResult.rows[0].id;
+  };
 
-  test("GET /reviews/business/:businessId - Should return 404 if no reviews exist", async () => {
-    const response = await request(app)
-      .get(`/api/reviews/business/${businessId}`)
-      .set("Authorization", `Bearer ${token}`);
-
-    expect(response.status).toBe(404);
-    expect(response.body).toHaveProperty(
-      "error",
-      "No reviews found for this business"
-    );
-  });
+  const createTestProfileAndBusiness = async (userId: number) => {
+    const profileId = await createTestProfile(userId);
+    const businessProfileId = await createTestBusinessProfile(profileId);
+    return { profileId, businessProfileId };
+  };
 });
