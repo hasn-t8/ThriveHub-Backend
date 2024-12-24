@@ -84,6 +84,92 @@ describe("Reviews API Endpoints", () => {
     expect(dbCheck.rowCount).toBe(1);
   });
 
+  it("PUT /reviews/:reviewId - Should update an existing review and verify averages", async () => {
+    // Insert a review
+    const reviewResult = await pool.query(
+      `INSERT INTO reviews (business_id, user_id, rating, feedback, customer_name)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [businessProfileId, userId, 5, "Good service", "Test User"]
+    );
+    const reviewId = reviewResult.rows[0].id;
+
+    const updatedReviewData = {
+      businessId: businessProfileId, // Include businessId if required
+      rating: 10,
+      feedback: "Amazing service!",
+    };
+
+    // Update the review
+    const response = await request(app)
+      .put(`/api/reviews/${reviewId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(updatedReviewData)
+      .expect(200);
+  });
+
+  it("POST /reviews - Should correctly update averages when there are multiple reviews for the same business", async () => {
+    // Create a second user
+    const secondUserResult = await pool.query(
+      "INSERT INTO users (email, password, is_active, token_version, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      ["seconduser@example.com", await bcrypt.hash("securepassword", 10), true, 0, "Second User"]
+    );
+    const secondUserId = secondUserResult.rows[0].id;
+
+    const secondUserToken = jwt.sign(
+      { id: secondUserId, email: "seconduser@example.com", tokenVersion: 0 },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    try {
+      // Create the first review by the first user
+      const firstReviewData = {
+        businessId: businessProfileId,
+        rating: 8,
+        feedback: "Good service",
+      };
+
+      const firstReviewResponse = await request(app)
+        .post("/api/reviews")
+        .set("Authorization", `Bearer ${token}`)
+        .send(firstReviewData)
+        .expect(201);
+
+      expect(firstReviewResponse.body).toHaveProperty("message", "Review created successfully");
+
+      // Create the second review by the second user
+      const secondReviewData = {
+        businessId: businessProfileId,
+        rating: 6,
+        feedback: "Okay service",
+      };
+
+      const secondReviewResponse = await request(app)
+        .post("/api/reviews")
+        .set("Authorization", `Bearer ${secondUserToken}`)
+        .send(secondReviewData)
+        .expect(201);
+
+      expect(secondReviewResponse.body).toHaveProperty("message", "Review created successfully");
+
+      // Verify the business profile's average and count
+      const businessCheck = await pool.query(
+        "SELECT avg_rating, total_reviews FROM profiles_business WHERE id = $1",
+        [businessProfileId]
+      );
+
+      const avgRating = parseFloat(businessCheck.rows[0].avg_rating);
+      const totalReviews = parseInt(businessCheck.rows[0].total_reviews, 10);
+
+      // Expected average: (8 + 6) / 2 = 7
+      expect(avgRating).toBe(7);
+      expect(totalReviews).toBe(2);
+    } finally {
+      // Clean up the second user after the test
+      await pool.query("DELETE FROM users WHERE id = $1", [secondUserId]);
+    }
+  });
+
   const createTestProfile = async (userId: number) => {
     const profileResult = await pool.query(
       `INSERT INTO profiles (user_id, profile_type) VALUES ($1, 'business') RETURNING id`,

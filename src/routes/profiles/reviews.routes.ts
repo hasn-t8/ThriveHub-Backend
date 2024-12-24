@@ -21,6 +21,12 @@ const validateReview = [
     .withMessage("Rating must be an integer between 1 and 10"),
   check("feedback").isString().withMessage("Feedback must be a string"),
 ];
+const validatePUTReview = [
+  check("rating")
+    .isInt({ min: 1, max: 10 })
+    .withMessage("Rating must be an integer between 1 and 10"),
+  check("feedback").isString().withMessage("Feedback must be a string"),
+];
 
 // Get all reviews for a specific business
 router.get(
@@ -86,7 +92,7 @@ router.post(
 router.put(
   "/reviews/:reviewId",
   verifyToken,
-  validateReview,
+  validatePUTReview,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
