@@ -5,5 +5,6 @@ export interface AuthenticatedRequest extends Request {
     id?: number;
     tokenVersion?: number;
     email?: string;
+    type?:string;
   };
 }
