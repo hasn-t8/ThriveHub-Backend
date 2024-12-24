@@ -179,7 +179,6 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
  * Delete a business profile.
  */
 export const deleteBusinessProfile = async (businessProfileId: number): Promise<void> => {
-  console.log('deleting >> profileId', businessProfileId);
   
   const client = await pool.connect();
   try {

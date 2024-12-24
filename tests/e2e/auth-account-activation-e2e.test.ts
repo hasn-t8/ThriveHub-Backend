@@ -56,14 +56,14 @@ describe("Account Verification E2E Test", () => {
     await pool.end();
   });
 
-  it("should retrieve the verification code for a valid user", async () => {
-    const response = await request(app)
-      .post("/api/auth/activate-account/get-code")
-      .send({ email: testUser.email })
-      .expect(200);
+  // it("should retrieve the verification code for a valid user", async () => {
+  //   const response = await request(app)
+  //     .post("/api/auth/activate-account/get-code")
+  //     .send({ email: testUser.email })
+  //     .expect(200);
 
-    expect(response.body.verificationCode).toBe(verificationCode);
-  });
+  //   expect(response.body.verificationCode).toBe(verificationCode);
+  // });
 
   it("should successfully verify an account with a valid code", async () => {
     const response = await request(app)

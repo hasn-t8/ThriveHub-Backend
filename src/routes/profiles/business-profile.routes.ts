@@ -165,7 +165,7 @@ router.delete(
       await deleteBusinessProfile(profileId);
       res.status(200).json({ message: "Business profile deleted successfully" });
     } catch (error) {
-      if (error instanceof Error && error.message === "Profile not found") {
+      if (error instanceof Error && error.message === "Business Profile not found") {
         res.status(404).json({ error: "Business profile not found" });
         return;
       }
