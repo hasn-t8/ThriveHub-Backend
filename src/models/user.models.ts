@@ -12,6 +12,16 @@ export interface User {
   updated_at: Date;
 }
 
+export const findUserByStripeCustomerId = async (
+  stripeCustomerId: string
+): Promise<User | null> => {
+  const result = await pool.query(`SELECT * FROM users WHERE stripe_customer_id = $1`, [
+    stripeCustomerId,
+  ]);
+
+  return result.rows[0] || null;
+};
+
 /** --------------------- Find User By Email --------------------- */
 export const findUserByEmail = async (
   email: string

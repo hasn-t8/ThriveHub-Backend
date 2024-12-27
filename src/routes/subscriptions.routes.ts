@@ -1,9 +1,11 @@
-import { Router, Response } from "express";
+import express, { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
 import { verifyToken } from "../middleware/authenticate";
 import { AuthenticatedRequest } from "../types/authenticated-request";
 import { recordPayment } from "../models/payments-history.models";
 import { recordWebhookEvent } from "../models/webhooks-stripe.models";
+import { findUserByStripeCustomerId } from "../models/user.models";
+import Stripe from "stripe";
 import {
   createSubscription,
   getSubscriptionsByUser,
@@ -27,7 +29,7 @@ router.get(
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
 
-    if (userId === undefined) {
+    if (!userId) {
       res.status(400).json({ error: "User ID is required" });
       return;
     }
@@ -63,7 +65,7 @@ router.post(
     const userId = req.user?.id;
     const { plan } = req.body;
 
-    if (userId === undefined) {
+    if (!userId) {
       res.status(400).json({ error: "User ID is required" });
       return;
     }
@@ -83,6 +85,7 @@ router.post(
                 : process.env.STRIPE_YEARLY_PRICE,
           },
         ],
+        expand: ["latest_invoice.payment_intent"],
       });
 
       const subscriptionId = await createSubscription(
@@ -91,10 +94,10 @@ router.post(
         plan,
         stripeSubscription.status,
         new Date(stripeSubscription.start_date * 1000),
-        stripeSubscription.cancel_at ? new Date(stripeSubscription.cancel_at * 1000) : null,
+        stripeSubscription.cancel_at ? new Date(stripeSubscription.cancel_at * 1000) : undefined,
         stripeSubscription.current_period_end
           ? new Date(stripeSubscription.current_period_end * 1000)
-          : null
+          : undefined
       );
 
       res.status(201).json({
@@ -170,21 +173,35 @@ router.post(
       const event = stripe.webhooks.constructEvent(
         req.body,
         sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+        process.env.STRIPE_WEBHOOK_SECRET as string
       );
 
       await recordWebhookEvent(event.id, event.type, event.data.object);
 
       // Handle specific event types
       if (event.type === "invoice.payment_succeeded") {
-        const paymentIntent = event.data.object;
-        await recordPayment(
-          paymentIntent.customer_id,
-          paymentIntent.id,
-          paymentIntent.amount_paid / 100,
-          paymentIntent.currency,
-          paymentIntent.status
-        );
+        const paymentIntent = event.data.object as Stripe.Invoice;
+
+        if (typeof paymentIntent.customer === "string") {
+          // Map Stripe customer to your user ID
+          const user = await findUserByStripeCustomerId(paymentIntent.customer);
+
+          if (!user) {
+            console.error(`No user found for Stripe Customer ID: ${paymentIntent.customer}`);
+            res.status(404).json({ error: "User not found" });
+            return;
+          }
+
+          await recordPayment(
+            user.id,
+            paymentIntent.id,
+            paymentIntent.amount_paid / 100,
+            paymentIntent.currency,
+            paymentIntent.status ?? 'unknown'
+          );
+        } else {
+          console.error("Unexpected customer type:", paymentIntent.customer);
+        }
       }
 
       res.status(200).json({ received: true });
