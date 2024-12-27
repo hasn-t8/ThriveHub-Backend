@@ -79,16 +79,30 @@ router.post(
       return;
     }
 
+    const userEmail = req.user?.email;
+    if (!userEmail) {
+      throw new Error("User email is not available.");
+    }
+
     try {
       // Check if Stripe customer already exists for the user
       const existingCustomer = await findStripeCustomerByUserId(userId);
-      const stripeCustomer = existingCustomer
-        ? existingCustomer
-        : await stripe.customers.create({ email: req.user?.email });
+      const stripeCustomer: Stripe.Customer =
+        existingCustomer && typeof existingCustomer !== "string"
+          ? existingCustomer
+          : await stripe.customers.create({ email: userEmail });
+
+      if (!stripeCustomer) {
+        throw new Error("Failed to create or retrieve the Stripe customer.");
+      }
 
       // If a new customer was created, save it in the database
       if (!existingCustomer) {
         await saveStripeCustomerId(userId, stripeCustomer.id);
+      }
+
+      if (!process.env.STRIPE_MONTHLY_PRICE || !process.env.STRIPE_YEARLY_PRICE) {
+        throw new Error("Stripe price IDs are not configured properly.");
       }
 
       const stripeSubscription = await stripe.subscriptions.create({
