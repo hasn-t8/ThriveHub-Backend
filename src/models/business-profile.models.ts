@@ -154,15 +154,7 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
       u.email,
       p.id AS profile_id, 
       p.profile_type, 
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
     FROM users u
     LEFT JOIN profiles p ON u.id = p.user_id AND p.profile_type = 'business'
     LEFT JOIN profiles_business pb ON p.id = pb.profile_id
@@ -211,15 +203,7 @@ export const getAllBusinessProfiles = async () => {
     SELECT 
       p.id AS profile_id,
       pb.id AS business_profile_id,
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
     FROM profiles p
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business'
@@ -236,15 +220,7 @@ export const getBusinessProfileByBusinessProfileId = async (
     SELECT 
       p.id AS profile_id, 
       pb.id AS business_profile_id, 
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
     FROM profiles p
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business' AND pb.id = $1
