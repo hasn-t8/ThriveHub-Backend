@@ -12,6 +12,29 @@ export interface User {
   updated_at: Date;
 }
 
+/** Find Stripe Customer by User ID */
+export const findStripeCustomerByUserId = async (
+  userId: number
+): Promise<string | null> => {
+  const result = await pool.query(
+    `SELECT stripe_customer_id FROM users WHERE id = $1`,
+    [userId]
+  );
+  return result.rows[0]?.stripe_customer_id || null;
+};
+
+/** Save Stripe Customer ID */
+export const saveStripeCustomerId = async (
+  userId: number,
+  stripeCustomerId: string
+): Promise<void> => {
+  await pool.query(
+    `UPDATE users SET stripe_customer_id = $1 WHERE id = $2`,
+    [stripeCustomerId, userId]
+  );
+};
+
+
 export const findUserByStripeCustomerId = async (
   stripeCustomerId: string
 ): Promise<User | null> => {

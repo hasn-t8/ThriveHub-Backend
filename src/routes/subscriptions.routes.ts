@@ -9,7 +9,11 @@ import {
   handleSubscriptionUpdated,
   handleSubscriptionDeleted,
 } from "../models/webhooks-stripe.models";
-import { findUserByStripeCustomerId } from "../models/user.models";
+import {
+  findUserByStripeCustomerId,
+  findStripeCustomerByUserId,
+  saveStripeCustomerId,
+} from "../models/user.models";
 import Stripe from "stripe";
 import {
   createSubscription,
@@ -76,9 +80,16 @@ router.post(
     }
 
     try {
-      const stripeCustomer = await stripe.customers.create({
-        email: req.user?.email,
-      });
+      // Check if Stripe customer already exists for the user
+      const existingCustomer = await findStripeCustomerByUserId(userId);
+      const stripeCustomer = existingCustomer
+        ? existingCustomer
+        : await stripe.customers.create({ email: req.user?.email });
+
+      // If a new customer was created, save it in the database
+      if (!existingCustomer) {
+        await saveStripeCustomerId(userId, stripeCustomer.id);
+      }
 
       const stripeSubscription = await stripe.subscriptions.create({
         customer: stripeCustomer.id,
