@@ -3,7 +3,12 @@ import { check, validationResult } from "express-validator";
 import { verifyToken } from "../middleware/authenticate";
 import { AuthenticatedRequest } from "../types/authenticated-request";
 import { recordPayment } from "../models/payments-history.models";
-import { recordWebhookEvent } from "../models/webhooks-stripe.models";
+import {
+  recordWebhookEvent,
+  handleSubscriptionCreated,
+  handleSubscriptionUpdated,
+  handleSubscriptionDeleted,
+} from "../models/webhooks-stripe.models";
 import { findUserByStripeCustomerId } from "../models/user.models";
 import Stripe from "stripe";
 import {
@@ -178,30 +183,103 @@ router.post(
 
       await recordWebhookEvent(event.id, event.type, event.data.object);
 
-      // Handle specific event types
-      if (event.type === "invoice.payment_succeeded") {
-        const paymentIntent = event.data.object as Stripe.Invoice;
+      switch (event.type) {
+        case "invoice.payment_succeeded":
+          const invoice = event.data.object as Stripe.Invoice;
 
-        if (typeof paymentIntent.customer === "string") {
-          // Map Stripe customer to your user ID
-          const user = await findUserByStripeCustomerId(paymentIntent.customer);
+          if (typeof invoice.customer === "string") {
+            const user = await findUserByStripeCustomerId(invoice.customer);
 
-          if (!user) {
-            console.error(`No user found for Stripe Customer ID: ${paymentIntent.customer}`);
-            res.status(404).json({ error: "User not found" });
-            return;
+            if (!user) {
+              console.error(`No user found for Stripe Customer ID: ${invoice.customer}`);
+              break;
+            }
+
+            await recordPayment(
+              user.id,
+              invoice.id,
+              invoice.amount_paid / 100,
+              invoice.currency,
+              invoice.status ?? "unknown"
+            );
+          } else {
+            console.error("Unexpected customer type:", invoice.customer);
           }
+          break;
 
-          await recordPayment(
-            user.id,
-            paymentIntent.id,
-            paymentIntent.amount_paid / 100,
-            paymentIntent.currency,
-            paymentIntent.status ?? 'unknown'
-          );
-        } else {
-          console.error("Unexpected customer type:", paymentIntent.customer);
-        }
+        case "customer.subscription.created":
+          const subscriptionCreated = event.data.object as Stripe.Subscription;
+
+          if (typeof subscriptionCreated.customer === "string") {
+            const user = await findUserByStripeCustomerId(subscriptionCreated.customer);
+
+            if (!user) {
+              console.error(
+                `No user found for Stripe Customer ID: ${subscriptionCreated.customer}`
+              );
+              break;
+            }
+            await handleSubscriptionCreated(user.id, subscriptionCreated);
+          } else {
+            console.error("Unexpected customer type:", subscriptionCreated.customer);
+          }
+          break;
+
+        case "customer.subscription.updated":
+          const subscriptionUpdated = event.data.object as Stripe.Subscription;
+
+          if (typeof subscriptionUpdated.customer === "string") {
+            const user = await findUserByStripeCustomerId(subscriptionUpdated.customer);
+
+            if (!user) {
+              console.error(
+                `No user found for Stripe Customer ID: ${subscriptionUpdated.customer}`
+              );
+              break;
+            }
+            await handleSubscriptionUpdated(user.id, subscriptionUpdated);
+          } else {
+            console.error("Unexpected customer type:", subscriptionUpdated.customer);
+          }
+          break;
+
+        case "customer.subscription.deleted":
+          const subscriptionDeleted = event.data.object as Stripe.Subscription;
+
+          if (typeof subscriptionDeleted.customer === "string") {
+            const user = await findUserByStripeCustomerId(subscriptionDeleted.customer);
+
+            if (!user) {
+              console.error(
+                `No user found for Stripe Customer ID: ${subscriptionDeleted.customer}`
+              );
+              break;
+            }
+            await handleSubscriptionDeleted(user.id, subscriptionDeleted.id);
+          } else {
+            console.error("Unexpected customer type:", subscriptionDeleted.customer);
+          }
+          break;
+
+        case "invoice.payment_failed":
+          const failedInvoice = event.data.object as Stripe.Invoice;
+
+          if (typeof failedInvoice.customer === "string") {
+            const user = await findUserByStripeCustomerId(failedInvoice.customer);
+
+            if (!user) {
+              console.error(`No user found for Stripe Customer ID: ${failedInvoice.customer}`);
+              break;
+            }
+
+            console.warn(`Payment failed for user ID ${user.id}, invoice ID: ${failedInvoice.id}`);
+          } else {
+            console.error("Unexpected customer type:", failedInvoice.customer);
+          }
+          break;
+
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
       }
 
       res.status(200).json({ received: true });
