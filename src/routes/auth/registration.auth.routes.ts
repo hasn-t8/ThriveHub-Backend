@@ -94,6 +94,10 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
     res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile });
     return;
   } catch (error) {
+    if (error instanceof Error && error.message === "Organization name already exists") {
+      res.status(404).json({ error: "Organization name already exists" });
+      return;
+    }
     console.error("Error registering user:", error);
     res.status(500).json({ error: "Internal Server Error" });
     return;

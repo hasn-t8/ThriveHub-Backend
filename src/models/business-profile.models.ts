@@ -43,6 +43,14 @@ export const createBusinessProfile = async (userId: number, data: any) => {
   try {
     await client.query("BEGIN");
 
+    const checkOrgName = await client.query(
+      `SELECT id FROM profiles_business WHERE org_name = $1`,
+      [data.org_name]
+    );
+    if (checkOrgName.rowCount && checkOrgName.rowCount > 0) {
+      throw new Error("Organization name already exists");
+    }
+
     let profileId;
     const profileResult = await client.query(
       `SELECT id FROM profiles WHERE user_id = $1 AND profile_type = 'business'`,

@@ -100,6 +100,10 @@ router.post(
         .status(201)
         .json({ message: "Business profile created successfully", profile: businessProfile });
     } catch (error) {
+      if (error instanceof Error && error.message === "Organization name already exists") {
+        res.status(404).json({ error: "Organization name already exists" });
+        return;
+      }
       console.error("Error creating business profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
