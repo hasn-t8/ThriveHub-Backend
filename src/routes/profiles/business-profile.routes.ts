@@ -47,15 +47,9 @@ router.get(
 
 router.get(
   "/businessprofiles/:profileId",
-  verifyToken,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const userId = req.user?.id;
-
-    if (userId === undefined) {
-      res.status(400).json({ error: "User ID is required" });
-      return;
-    }
-    //TODO: allow if the user owns this business profile, or if the user is an admin
+    
+    
     const profileId = parseInt(req.params.profileId, 10);
 
     try {
@@ -122,7 +116,7 @@ router.put(
       res.status(400).json({ errors: errors.array() });
       return;
     }
-
+    //TODO: allow if the user owns this business profile, or if the user is an admin
     const profileId = parseInt(req.params.profileId, 10);
     const { profileData } = req.body;
 
