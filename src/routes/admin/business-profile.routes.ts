@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import { verifyToken } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
-import { getAllBusinessProfiles } from "../../models/business-profile.models";
+import { getAllBusinessProfiles, getTotalBusinessProfilesCount } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = Router();
@@ -12,17 +12,37 @@ router.get(
   // verifyToken,
   // authorize("*", "*"), // Admins should have full access
   async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const allBusinessProfiles = await getAllBusinessProfiles();
+    const { page = 1, limit = 1000 } = _req.query;
 
-      if (!allBusinessProfiles || allBusinessProfiles.length === 0) {
-        res.status(404).json({ error: "No business profiles found" });
+    try {
+      const pageNumber = parseInt(page as string, 10);
+      const pageLimit = parseInt(limit as string, 10);
+
+      if (isNaN(pageNumber) || isNaN(pageLimit) || pageNumber <= 0 || pageLimit <= 0) {
+        res.status(400).json({ error: "Invalid pagination parameters" });
         return;
       }
 
-      res.status(200).json(allBusinessProfiles);
+      const offset = (pageNumber - 1) * pageLimit;
+
+      const allBusinessProfiles = await getAllBusinessProfiles(pageLimit, offset);
+      const totalProfiles = await getTotalBusinessProfilesCount();
+
+      const paginationInfo = {
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalProfiles / pageLimit),
+        totalProfiles,
+        pageLimit,
+      };
+
+      if (!allBusinessProfiles || allBusinessProfiles.length === 0) {
+        res.status(404).json({ error: "No business profiles found", pagination: paginationInfo });
+        return;
+      }
+
+      res.status(200).json({ data: allBusinessProfiles, pagination: paginationInfo });
     } catch (error) {
-      console.error("Error fetching all business profiles.");
+      console.error("Error fetching all business profiles:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

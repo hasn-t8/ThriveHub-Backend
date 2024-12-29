@@ -204,7 +204,7 @@ export const deleteBusinessProfile = async (businessProfileId: number): Promise<
   }
 };
 
-export const getAllBusinessProfiles = async () => {
+export const getAllBusinessProfiles = async (limit: number, offset: number) => {
   const query = `
     SELECT 
       p.id AS profile_id,
@@ -214,10 +214,23 @@ export const getAllBusinessProfiles = async () => {
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business'
     ORDER BY pb.id ASC
+    LIMIT $1 OFFSET $2
+  `;
+
+  const result = await pool.query(query, [limit, offset]);
+  return result.rows;
+};
+
+export const getTotalBusinessProfilesCount = async (): Promise<number> => {
+  const query = `
+    SELECT COUNT(*) AS total
+    FROM profiles p
+    INNER JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.profile_type = 'business'
   `;
 
   const result = await pool.query(query);
-  return result.rows;
+  return parseInt(result.rows[0].total, 10);
 };
 
 export const getBusinessProfileByBusinessProfileId = async (
