@@ -31,7 +31,6 @@ const validatePUTReview = [
 // Get all reviews for a specific business
 router.get(
   "/reviews/business/:businessId",
-  verifyToken,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const businessId = parseInt(req.params.businessId, 10);
 
