@@ -213,7 +213,7 @@ export const getAllBusinessProfiles = async () => {
     FROM profiles p
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business'
-    ORDER BY pb.id DESC
+    ORDER BY pb.id ASC
   `;
 
   const result = await pool.query(query);
