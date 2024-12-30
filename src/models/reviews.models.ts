@@ -19,7 +19,7 @@ export const updateReviewLikes = async (reviewId: number): Promise<void> => {
   await pool.query(
     `
       UPDATE reviews
-      SET total_likes = (
+      SET likes_total = (
         SELECT COUNT(*)
         FROM likes
         WHERE entity_type = 'review' AND entity_id = $1
