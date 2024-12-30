@@ -1,12 +1,10 @@
 import { Router, Response } from "express";
-import { verifyToken } from "../../middleware/authenticate";
-import { authorize } from "../../middleware/authorize";
 import { getAllBusinessProfiles, getTotalBusinessProfilesCount } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = Router();
 
-// Admin route to get all business profiles
+// Admin route to get all business profiles with pagination
 router.get(
   "/admin/businessprofiles",
   // verifyToken,
@@ -59,62 +57,76 @@ export default router;
  * /admin/businessprofiles:
  *   get:
  *     summary: Retrieve all business profiles
- *     description: This endpoint allows admin users to retrieve all business profiles. Admins must have full access permissions.
+ *     description: This endpoint allows admin users to retrieve all business profiles with pagination. Admins must have full access permissions.
  *     tags: [Admin Business Profiles]
  *     security:
  *       - bearerAuth: [] # Using token-based authentication
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: The page number for pagination (default is 1)
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *         description: The number of records per page (default is 10)
  *     responses:
  *       200:
  *         description: Successfully retrieved all business profiles
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   profile_id:
- *                     type: integer
- *                     description: The ID of the profile
- *                   business_website_url:
- *                     type: string
- *                     description: The website URL of the business
- *                   business_website_title:
- *                     type: string
- *                     description: The website URL title of the business
- *                   org_name:
- *                     type: string
- *                     description: The name of the organization
- *                   job_title:
- *                     type: string
- *                     description: The job title of the user in the business
- *                   work_email:
- *                     type: string
- *                     description: The work email of the business
- *                   category:
- *                     type: string
- *                     description: The category of the business
- *                   logo_url:
- *                     type: string
- *                     description: The logo URL of the business
- *                   about_business:
- *                     type: string
- *                     description: Description of the business
- *                   work_email_verified:
- *                     type: boolean
- *                     description: Whether the work email is verified
- *       401:
- *         description: Unauthorized - User token is missing or invalid
- *         content:
- *           application/json:
- *             schema:
  *               type: object
  *               properties:
- *                 error:
- *                   type: string
- *                   description: Error message
- *       403:
- *         description: Forbidden - User does not have the required permissions
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       profile_id:
+ *                         type: integer
+ *                         description: The ID of the profile
+ *                       business_profile_id:
+ *                         type: integer
+ *                         description: The ID of the business profile
+ *                       org_name:
+ *                         type: string
+ *                         description: The name of the organization
+ *                       category:
+ *                         type: string
+ *                         description: The category of the business
+ *                       work_email:
+ *                         type: string
+ *                         description: The work email of the business
+ *                       logo_url:
+ *                         type: string
+ *                         description: The logo URL of the business
+ *                       about_business:
+ *                         type: string
+ *                         description: Description of the business
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                       description: The current page number
+ *                     totalPages:
+ *                       type: integer
+ *                       description: The total number of pages
+ *                     totalProfiles:
+ *                       type: integer
+ *                       description: The total number of profiles
+ *                     pageLimit:
+ *                       type: integer
+ *                       description: The number of profiles per page
+ *       400:
+ *         description: Invalid pagination parameters
  *         content:
  *           application/json:
  *             schema:
@@ -133,6 +145,21 @@ export default router;
  *                 error:
  *                   type: string
  *                   description: Error message
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                       description: The current page number
+ *                     totalPages:
+ *                       type: integer
+ *                       description: The total number of pages
+ *                     totalProfiles:
+ *                       type: integer
+ *                       description: The total number of profiles
+ *                     pageLimit:
+ *                       type: integer
+ *                       description: The number of profiles per page
  *       500:
  *         description: Internal Server Error
  *         content:
