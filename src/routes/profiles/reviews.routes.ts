@@ -8,6 +8,7 @@ import {
   updateReview,
   checkReviewOwnership,
   getReviewsForBusiness,
+  getReviewsByUserId,
   deleteReview,
 } from "../../models/reviews.models";
 
@@ -185,6 +186,35 @@ router.delete(
   }
 );
 
+
+// Get all reviews by the authenticated user
+router.get(
+  "/reviews",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const reviews = await getReviewsByUserId(userId);
+
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found for this user" });
+        return;
+      }
+
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching user reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 export default router;
 
 /**
@@ -264,6 +294,46 @@ export default router;
  *         description: Validation errors
  *       500:
  *         description: Internal server error
+ * 
+ * /reviews/user:
+ *   get:
+ *     summary: Get all reviews by the authenticated user
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of reviews
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   business_id:
+ *                     type: integer
+ *                   rating:
+ *                     type: integer
+ *                     description: Rating between 1 and 10
+ *                   feedback:
+ *                     type: string
+ *                     description: User feedback
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *                   customer_name:
+ *                     type: string
+ *                     description: Name of the user who left the review
+ *       404:
+ *         description: No reviews found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ *
  */
 
 /**
