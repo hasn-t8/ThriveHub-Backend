@@ -12,6 +12,25 @@ export interface Review {
 }
 
 /**
+ * Update the total likes for a review.
+ * @param reviewId The review ID
+ */
+export const updateReviewLikes = async (reviewId: number): Promise<void> => {
+  await pool.query(
+    `
+      UPDATE reviews
+      SET total_likes = (
+        SELECT COUNT(*)
+        FROM likes
+        WHERE entity_type = 'review' AND entity_id = $1
+      )
+      WHERE id = $1
+      `,
+    [reviewId]
+  );
+};
+
+/**
  * Create a new review for a business.
  * @param businessId The business ID
  * @param userId The user ID
