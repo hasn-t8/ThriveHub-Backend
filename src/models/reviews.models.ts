@@ -12,6 +12,25 @@ export interface Review {
 }
 
 /**
+ * Update the total likes for a review.
+ * @param reviewId The review ID
+ */
+export const updateReviewLikes = async (reviewId: number): Promise<void> => {
+  await pool.query(
+    `
+      UPDATE reviews
+      SET likes_total = (
+        SELECT COUNT(*)
+        FROM likes
+        WHERE entity_type = 'reviews' AND entity_id = $1
+      )
+      WHERE id = $1
+      `,
+    [reviewId]
+  );
+};
+
+/**
  * Create a new review for a business.
  * @param businessId The business ID
  * @param userId The user ID
@@ -30,7 +49,7 @@ export const createReview = async (
     throw new Error("User not found");
   }
 
-  const customerName = userResult.rows[0].full_name;
+  const customerName = userResult.rows[0].full_name || "Anonymous";
 
   const result = await pool.query(
     `INSERT INTO reviews (business_id, user_id, rating, feedback, customer_name)
