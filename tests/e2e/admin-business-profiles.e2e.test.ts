@@ -95,9 +95,13 @@ describe("Admin Business Profiles Endpoints", () => {
       .get("/api/admin/businessprofiles")
       .set("Authorization", `Bearer ${adminToken}`)
       .expect(200);
+    
+    const data = response.body.data;
+    console.log('response.body', data);
+      
 
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(1);
+    expect(Array.isArray(data)).toBe(true);
+    expect(data.length).toBeGreaterThan(1);
 
     // Clean up after this test
     await pool.query("DELETE FROM profiles_business WHERE profile_id = $1", [businessProfileId]);
