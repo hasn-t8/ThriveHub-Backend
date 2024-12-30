@@ -2,7 +2,7 @@ import pool from "../config/db";
 
 export interface Like {
   id: number;
-  entity_type: string; // e.g., 'post', 'comment', 'review'
+  entity_type: string; // e.g., 'post', 'comment', 'reviews'
   entity_id: number;
   user_id: number;
   created_at: Date;

@@ -16,7 +16,7 @@ const router = Router();
 const validateLike = [
   check("entityType")
     .isString()
-    .withMessage("Entity type must be a string (e.g., 'review', 'post')"),
+    .withMessage("Entity type must be a string (e.g., 'reviews', 'post')"),
   check("entityId").isInt().withMessage("Entity ID must be an integer"),
 ];
 
@@ -42,7 +42,7 @@ router.post(
 
     try {
       const likeId = await addLike(entityType, entityId, userId);
-      if (entityType === "review") {
+      if (entityType === "reviews") {
         await updateReviewLikes(entityId);
       }
       res.status(201).json({ message: "Like added successfully", likeId });
@@ -75,7 +75,7 @@ router.delete(
 
     try {
       await removeLike(entityType, entityId, userId);
-      if (entityType === "review") {
+      if (entityType === "reviews") {
         await updateReviewLikes(entityId);
       }
       res.status(200).json({ message: "Like removed successfully" });
@@ -92,7 +92,7 @@ router.get(
   [
     check("entityType")
       .isString()
-      .withMessage("Entity type must be a string (e.g., 'review', 'post')"),
+      .withMessage("Entity type must be a string (e.g., 'reviews', 'post')"),
     check("entityId").isInt().withMessage("Entity ID must be an integer"),
   ],
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -162,7 +162,7 @@ export default router;
  *             properties:
  *               entityType:
  *                 type: string
- *                 example: "review"
+ *                 example: "reviews"
  *               entityId:
  *                 type: integer
  *                 example: 123
@@ -188,7 +188,7 @@ export default router;
  *             properties:
  *               entityType:
  *                 type: string
- *                 example: "review"
+ *                 example: "reviews"
  *               entityId:
  *                 type: integer
  *                 example: 123
@@ -210,7 +210,7 @@ export default router;
  *         required: true
  *         schema:
  *           type: string
- *           example: "review"
+ *           example: "reviews"
  *       - in: query
  *         name: entityId
  *         required: true

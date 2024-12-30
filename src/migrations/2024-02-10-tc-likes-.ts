@@ -13,7 +13,7 @@ export const up = async (pool: Pool) => {
     await client.query(`
       CREATE TABLE likes (
         id SERIAL PRIMARY KEY,
-        entity_type VARCHAR(50) NOT NULL, -- Type of entity being liked, e.g., 'post', 'comment', 'review'
+        entity_type VARCHAR(50) NOT NULL, -- Type of entity being liked, e.g., 'post', 'comment', 'reviews'
         entity_id INT NOT NULL,          -- ID of the specific entity being liked
         user_id INT NOT NULL,            -- ID of the user who liked the entity
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
