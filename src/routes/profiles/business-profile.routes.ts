@@ -47,15 +47,9 @@ router.get(
 
 router.get(
   "/businessprofiles/:profileId",
-  verifyToken,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const userId = req.user?.id;
-
-    if (userId === undefined) {
-      res.status(400).json({ error: "User ID is required" });
-      return;
-    }
-    //TODO: allow if the user owns this business profile, or if the user is an admin
+    
+    
     const profileId = parseInt(req.params.profileId, 10);
 
     try {
@@ -100,6 +94,10 @@ router.post(
         .status(201)
         .json({ message: "Business profile created successfully", profile: businessProfile });
     } catch (error) {
+      if (error instanceof Error && error.message === "Organization name already exists") {
+        res.status(404).json({ error: "Organization name already exists" });
+        return;
+      }
       console.error("Error creating business profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
@@ -118,7 +116,7 @@ router.put(
       res.status(400).json({ errors: errors.array() });
       return;
     }
-
+    //TODO: allow if the user owns this business profile, or if the user is an admin
     const profileId = parseInt(req.params.profileId, 10);
     const { profileData } = req.body;
 
@@ -165,7 +163,7 @@ router.delete(
       await deleteBusinessProfile(profileId);
       res.status(200).json({ message: "Business profile deleted successfully" });
     } catch (error) {
-      if (error instanceof Error && error.message === "Profile not found") {
+      if (error instanceof Error && error.message === "Business Profile not found") {
         res.status(404).json({ error: "Business profile not found" });
         return;
       }

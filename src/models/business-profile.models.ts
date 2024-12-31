@@ -43,6 +43,14 @@ export const createBusinessProfile = async (userId: number, data: any) => {
   try {
     await client.query("BEGIN");
 
+    const checkOrgName = await client.query(
+      `SELECT id FROM profiles_business WHERE org_name = $1`,
+      [data.org_name]
+    );
+    if (checkOrgName.rowCount && checkOrgName.rowCount > 0) {
+      throw new Error("Organization name already exists");
+    }
+
     let profileId;
     const profileResult = await client.query(
       `SELECT id FROM profiles WHERE user_id = $1 AND profile_type = 'business'`,
@@ -154,15 +162,7 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
       u.email,
       p.id AS profile_id, 
       p.profile_type, 
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
     FROM users u
     LEFT JOIN profiles p ON u.id = p.user_id AND p.profile_type = 'business'
     LEFT JOIN profiles_business pb ON p.id = pb.profile_id
@@ -179,16 +179,13 @@ export const getBusinessProfilesByUserId = async (userId: number) => {
  * Delete a business profile.
  */
 export const deleteBusinessProfile = async (businessProfileId: number): Promise<void> => {
-  console.log('deleting >> profileId', businessProfileId);
-  
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const profileResult = await client.query(
-      "SELECT id FROM profiles_business WHERE id = $1",
-      [businessProfileId]
-    );
+    const profileResult = await client.query("SELECT id FROM profiles_business WHERE id = $1", [
+      businessProfileId,
+    ]);
 
     if (profileResult.rowCount === 0) {
       throw new Error("Business Profile not found");
@@ -197,37 +194,43 @@ export const deleteBusinessProfile = async (businessProfileId: number): Promise<
     await client.query("DELETE FROM profiles_business WHERE id = $1", [businessProfileId]);
 
     await client.query("COMMIT");
-    console.log('Successfully deleted business profile with ID:', businessProfileId);
+    console.log("Successfully deleted business profile with ID:", businessProfileId);
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error('Error deleting business profile:', error);
+    console.error("Error deleting business profile:", error);
     throw error;
   } finally {
     client.release();
   }
 };
 
-export const getAllBusinessProfiles = async () => {
+export const getAllBusinessProfiles = async (limit: number, offset: number) => {
   const query = `
     SELECT 
       p.id AS profile_id,
       pb.id AS business_profile_id,
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
+    FROM profiles p
+    INNER JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.profile_type = 'business'
+    ORDER BY pb.id ASC
+    LIMIT $1 OFFSET $2
+  `;
+
+  const result = await pool.query(query, [limit, offset]);
+  return result.rows;
+};
+
+export const getTotalBusinessProfilesCount = async (): Promise<number> => {
+  const query = `
+    SELECT COUNT(*) AS total
     FROM profiles p
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business'
   `;
 
   const result = await pool.query(query);
-  return result.rows;
+  return parseInt(result.rows[0].total, 10);
 };
 
 export const getBusinessProfileByBusinessProfileId = async (
@@ -237,15 +240,7 @@ export const getBusinessProfileByBusinessProfileId = async (
     SELECT 
       p.id AS profile_id, 
       pb.id AS business_profile_id, 
-      pb.business_website_url,
-      pb.business_website_title,
-      pb.org_name, 
-      pb.job_title, 
-      pb.work_email, 
-      pb.category, 
-      pb.logo_url, 
-      pb.about_business, 
-      pb.work_email_verified
+      pb.*
     FROM profiles p
     INNER JOIN profiles_business pb ON p.id = pb.profile_id
     WHERE p.profile_type = 'business' AND pb.id = $1

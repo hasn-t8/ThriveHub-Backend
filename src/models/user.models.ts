@@ -12,6 +12,39 @@ export interface User {
   updated_at: Date;
 }
 
+/** Find Stripe Customer by User ID */
+export const findStripeCustomerByUserId = async (
+  userId: number
+): Promise<string | null> => {
+  const result = await pool.query(
+    `SELECT stripe_customer_id FROM users WHERE id = $1`,
+    [userId]
+  );
+  return result.rows[0]?.stripe_customer_id || null;
+};
+
+/** Save Stripe Customer ID */
+export const saveStripeCustomerId = async (
+  userId: number,
+  stripeCustomerId: string
+): Promise<void> => {
+  await pool.query(
+    `UPDATE users SET stripe_customer_id = $1 WHERE id = $2`,
+    [stripeCustomerId, userId]
+  );
+};
+
+
+export const findUserByStripeCustomerId = async (
+  stripeCustomerId: string
+): Promise<User | null> => {
+  const result = await pool.query(`SELECT * FROM users WHERE stripe_customer_id = $1`, [
+    stripeCustomerId,
+  ]);
+
+  return result.rows[0] || null;
+};
+
 /** --------------------- Find User By Email --------------------- */
 export const findUserByEmail = async (
   email: string
@@ -182,7 +215,7 @@ export const saveVerificationCode = async (
 /** --------------------- Password Reset - save token --------------------- */
 export const saveResetToken = async (
   userId: number,
-  resetToken: string
+  resetToken: number
 ): Promise<void> => {
   await pool.query(
     `INSERT INTO password_resets (user_id, token, created_at) VALUES ($1, $2, NOW())

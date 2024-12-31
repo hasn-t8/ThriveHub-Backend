@@ -2,7 +2,9 @@ import { Router, Request, Response } from "express";
 import { findUserByEmail, saveResetToken } from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
-// import nodemailer from "nodemailer";
+import { sendMail } from "../../helpers/mailgun.helper";
+const NODE_ENV = process.env.NODE_ENV || "development";
+const IS_DEVLOPMENT = NODE_ENV === "development";
 
 const router = Router();
 
@@ -31,36 +33,31 @@ router.post(
         return;
       }
 
-      // Generate reset token
-      const resetToken = crypto.randomBytes(32).toString("hex");
+      // Generate a 6-digit verification code
+      const resetToken = crypto.randomInt(10000, 99999);
 
       // Save reset token in the database
       await saveResetToken(user.id, resetToken);
 
-      // Send reset token via email
-      // Uncomment below to enable email sending with nodemailer
-      /*
-      const transporter = nodemailer.createTransport({
-        service: "gmail", // Replace with your email service
-        auth: {
-          user: process.env.EMAIL_USER, // Set this in your .env file
-          pass: process.env.EMAIL_PASS, // Set this in your .env file
-        },
-      });
+      if (IS_DEVLOPMENT) {
+        res.status(200).json({
+          message: `Password reset token sent successfully. ${resetToken}`,
+        });
+      } else {
+        const emailVariables = {
+          full_name: user.full_name,
+          recover_pass_token: resetToken,
+        };
 
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Password Reset Request",
-        text: `You requested a password reset. Use this token to reset your password: ${resetToken}`,
-      };
-
-      await transporter.sendMail(mailOptions);
-      */
-
-      res
-        .status(200)
-        .json({ message: `Password reset token sent successfully. ${resetToken}` });
+        // Send activation email
+        await sendMail(
+          email,
+          "Recover Forgot Password",
+          "Recover Password",
+          emailVariables
+        );
+        res.status(200).json({ message: "Password reset token sent successfully" });
+      }
     } catch (error) {
       console.error("Error in Forgot Password:", error);
       res.status(500).json({ error: "Internal Server Error" });

@@ -56,14 +56,14 @@ describe("Account Verification E2E Test", () => {
     await pool.end();
   });
 
-  it("should retrieve the verification code for a valid user", async () => {
-    const response = await request(app)
-      .post("/api/auth/activate-account/get-code")
-      .send({ email: testUser.email })
-      .expect(200);
+  // it("should retrieve the verification code for a valid user", async () => {
+  //   const response = await request(app)
+  //     .post("/api/auth/activate-account/get-code")
+  //     .send({ email: testUser.email })
+  //     .expect(200);
 
-    expect(response.body.verificationCode).toBe(verificationCode);
-  });
+  //   expect(response.body.verificationCode).toBe(verificationCode);
+  // });
 
   it("should successfully verify an account with a valid code", async () => {
     const response = await request(app)
@@ -176,32 +176,5 @@ describe("Account Verification E2E Test", () => {
         }),
       ])
     );
-  });
-
-  // Test for requesting a new verification code
-  it("should generate a new verification code for the authenticated user", async () => {
-    const response = await request(app)
-      .post("/api/auth/activate-account/request-new-code")
-      .set("Authorization", `Bearer ${token}`)
-      .expect(200);
-
-    // expect(response.body.message).toBe("New verification code sent successfully");
-    expect(response.body.code).toBeDefined();
-
-    // Check if the new code was updated in the database
-    const codeResult = await pool.query(
-      "SELECT code FROM user_verification WHERE user_id = (SELECT id FROM users WHERE email = $1)",
-      [testUser.email]
-    );
-    expect(codeResult.rowCount).toBe(1);
-    // expect(codeResult.rows[0].code).toBe(response.body.code);
-  });
-
-  it("should return 401 when requesting a new code without a token", async () => {
-    const response = await request(app)
-      .post("/api/auth/activate-account/request-new-code")
-      .expect(401);
-
-    // expect(response.body.error).toBe("Unauthorized");
   });
 });

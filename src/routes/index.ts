@@ -19,6 +19,8 @@ import businessProfile from './profiles/business-profile.routes';
 // import keyFeaturesAndKeyName from './profiles/key-features.routes';
 import businessKeyPoints from './profiles/business-key-points.routes';
 import personalProfileImage from './profiles/personal-profile-image-upload.routes';
+import reviews from './profiles/reviews.routes';
+import likes from './profiles/tc-likes.routes';
 
 router.use(authLoginRoute);
 router.use(authRegistrationRoute);
@@ -43,6 +45,9 @@ router.use(uploadLogo);
 router.use(businessProfile);
 // router.use(keyFeaturesAndKeyName);
 router.use(businessKeyPoints);
+router.use(reviews);
+
+router.use(likes);
 
 
 export default router;
