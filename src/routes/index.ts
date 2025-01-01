@@ -21,6 +21,11 @@ import businessKeyPoints from './profiles/business-key-points.routes';
 import personalProfileImage from './profiles/personal-profile-image-upload.routes';
 import reviews from './profiles/reviews.routes';
 import likes from './profiles/tc-likes.routes';
+import blogPosts from './blog/blog-posts.routes';
+import blogCategories from './blog/categories.routes';
+import imageUpload from './blog/image-uploads.routes';
+
+
 
 router.use(authLoginRoute);
 router.use(authRegistrationRoute);
@@ -48,6 +53,12 @@ router.use(businessKeyPoints);
 router.use(reviews);
 
 router.use(likes);
+
+router.use(blogPosts);
+router.use(blogCategories);
+router.use(imageUpload);
+
+
 
 
 export default router;
