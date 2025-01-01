@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 
 /**
- * Up migration: Create the `blog_posts` table.
+ * Up migration: Create the `blog_posts` table with `category_id`.
  */
 export const up = async (pool: Pool) => {
   const client = await pool.connect();
@@ -14,6 +14,7 @@ export const up = async (pool: Pool) => {
       CREATE TABLE blog_posts (
         id SERIAL PRIMARY KEY,
         author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, -- User who authored the post
+        category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL, -- Category the post belongs to
         title VARCHAR(255) NOT NULL, -- Title of the blog post
         content TEXT NOT NULL, -- Main content of the blog post
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Date and time the post was created
@@ -27,6 +28,7 @@ export const up = async (pool: Pool) => {
     // Add indexes for efficient querying
     await client.query(`CREATE INDEX idx_blog_posts_author_id ON blog_posts(author_id);`);
     await client.query(`CREATE INDEX idx_blog_posts_is_published ON blog_posts(is_published);`);
+    await client.query(`CREATE INDEX idx_blog_posts_category_id ON blog_posts(category_id);`);
 
     console.log("Indexes for `blog_posts` created successfully.");
 
