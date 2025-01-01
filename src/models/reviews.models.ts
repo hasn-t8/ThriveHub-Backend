@@ -9,6 +9,7 @@ export interface Review {
   created_at: Date;
   updated_at: Date;
   customer_name: string;
+  approval_status: boolean;
 }
 
 /**
@@ -52,8 +53,8 @@ export const createReview = async (
   const customerName = userResult.rows[0].full_name || "Anonymous";
 
   const result = await pool.query(
-    `INSERT INTO reviews (business_id, user_id, rating, feedback, customer_name)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    `INSERT INTO reviews (business_id, user_id, rating, feedback, customer_name, approval_status)
+     VALUES ($1, $2, $3, $4, $5, false) RETURNING id`,
     [businessId, userId, rating, feedback, customerName]
   );
 
@@ -124,7 +125,7 @@ export const updateReview = async (
         feedback = COALESCE($2, feedback),
         updated_at = NOW()
       WHERE id = $3
-      RETURNING id, business_id, user_id, rating, feedback, customer_name, created_at, updated_at
+      RETURNING id, business_id, user_id, rating, feedback, customer_name, created_at, updated_at, approval_status
       `,
       [rating, feedback, reviewId]
     );
@@ -150,7 +151,7 @@ export const updateReview = async (
  */
 export const getReviewsForBusiness = async (businessId: number): Promise<Review[]> => {
   const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
      FROM reviews
      WHERE business_id = $1
      ORDER BY created_at DESC`,
@@ -216,7 +217,7 @@ export const deleteReview = async (reviewId: number): Promise<void> => {
  */
 export const getReviewsByUserId = async (userId: number): Promise<Review[]> => {
   const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
      FROM reviews
      WHERE user_id = $1
      ORDER BY created_at DESC`,
