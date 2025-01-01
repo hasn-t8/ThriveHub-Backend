@@ -95,6 +95,35 @@ router.put(
 );
 
 /** --------------------- Create Business Key Point Name --------------------- */
+// router.post(
+//   "/business-key-point-names",
+//   verifyToken,
+//   validateKeyPointName,
+//   async (req: AuthenticatedRequest, res: Response) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       res.status(400).json({ errors: errors.array() });
+//       return;
+//     }
+
+//     //TODO: only allow a business owner and the admin
+//     const { name, type } = req.body;
+//     const userId = req.user?.id;
+
+//     try {
+//       const keyPointNameId = await createBusinessKeyPointName(name, type, userId!);
+//       res
+//         .status(201)
+//         .json({ message: "Business Key Point Name created successfully", keyPointNameId });
+//     } catch (error) {
+//       console.error("Error creating business key point name:", error);
+//       res.status(500).json({ error: "Internal Server Error" });
+//     }
+//   }
+// );
+
+
+/** --------------------- Create Business Key Point Name --------------------- */
 router.post(
   "/business-key-point-names",
   verifyToken,
@@ -106,9 +135,15 @@ router.post(
       return;
     }
 
-    //TODO: only allow a business owner and the admin
     const { name, type } = req.body;
     const userId = req.user?.id;
+    const userType = req.user?.type; // Assuming `type` is part of the authenticated user's payload
+
+    // Check if the user type is allowed
+    if (userType !== "admin" && userType !== "business owner") {
+      res.status(403).json({ error: "Access denied: Unauthorized user type" });
+      return;
+    }
 
     try {
       const keyPointNameId = await createBusinessKeyPointName(name, type, userId!);

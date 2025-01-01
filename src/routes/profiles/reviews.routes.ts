@@ -11,6 +11,7 @@ import {
   getReviewsByUserId,
   deleteReview,
 } from "../../models/reviews.models";
+import pool from "../../config/db";
 
 const router = Router();
 
@@ -139,6 +140,48 @@ router.put(
   }
 );
 
+// Approve a review
+router.patch(
+  "/reviews/:reviewId/approve",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    const reviewId = parseInt(req.params.reviewId, 10);
+
+    if (isNaN(reviewId)) {
+      res.status(400).json({ error: "Invalid Review ID" });
+      return;
+    }
+
+    try {
+      // Check ownership or admin rights (add appropriate logic here if needed)
+      const isOwner = await checkReviewOwnership(reviewId, userId);
+
+      if (!isOwner) {
+        res
+          .status(403)
+          .json({ error: "You are not authorized to approve this review" });
+        return;
+      }
+
+      await pool.query(
+        `UPDATE reviews SET approval_status = TRUE WHERE id = $1`,
+        [reviewId]
+      );
+
+      res.status(200).json({ message: "Review approved successfully" });
+    } catch (error) {
+      console.error("Error approving review:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
 // Delete a review
 router.delete(
   "/reviews/:reviewId",
@@ -185,7 +228,6 @@ router.delete(
     }
   }
 );
-
 
 // Get all reviews by the authenticated user
 router.get(
@@ -258,6 +300,9 @@ export default router;
  *                   customer_name:
  *                     type: string
  *                     description: Name of the user who left the review
+ *                   approval_status:
+ *                     type: boolean
+ *                     description: Approval status of the review
  *       404:
  *         description: No reviews found
  *       500:
@@ -327,6 +372,9 @@ export default router;
  *                   customer_name:
  *                     type: string
  *                     description: Name of the user who left the review
+ *                   approval_status:
+ *                     type: boolean
+ *                     description: Approval status of the review
  *       404:
  *         description: No reviews found
  *       401:
@@ -334,10 +382,6 @@ export default router;
  *       500:
  *         description: Internal server error
  *
- */
-
-/**
- * @swagger
  * /reviews/{reviewId}:
  *   put:
  *     summary: Update an existing review
