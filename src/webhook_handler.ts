@@ -7,7 +7,7 @@ import {
   canceSubscription,
   updateSubscription,
 } from "./models/subscriptions.models";
-import { findUserByStripeCustomerId } from "./models/user.models";
+import { findUserByStripeCustomerId, saveStripeCustomerId } from "./models/user.models";
 
 export async function webHookHandler(event: Stripe.Event): Promise<void> {
   console.log(`Processing event type: ${event.type}`);
@@ -28,6 +28,10 @@ export async function webHookHandler(event: Stripe.Event): Promise<void> {
 
       case "customer.subscription.created":
         await handleCustomerSubscriptionCreated(event.data.object as Stripe.Subscription);
+        break;
+
+      case "customer.subscription.updated":
+        await handleCustomerSubscriptionUpdated(event.data.object as Stripe.Subscription);
         break;
 
       case "customer.subscription.deleted":
@@ -86,7 +90,6 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
         const plan = await stripe.prices.retrieve(planId);
         const interval = plan.recurring?.interval;
 
-        // Add prefix based on interval
         const prefixedProductName =
           interval === "month"
             ? `MONTHLY-${product.name}`
@@ -188,6 +191,71 @@ async function handleCustomerSubscriptionCreated(subscription: Stripe.Subscripti
   );
 
   console.log("Subscription successfully created in database.");
+}
+
+async function handleCustomerSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
+  console.log("Customer subscription updated!");
+
+  const customerId = subscription.customer;
+  if (typeof customerId !== "string") {
+    console.error("Invalid customer ID in subscription update.");
+    return;
+  }
+
+  const user = await findUserByStripeCustomerId(customerId);
+  if (!user) {
+    console.error(`No user found for Stripe customer ID: ${customerId}`);
+    return;
+  }
+
+  // Check if the subscription exists in the database
+  const existingSubscription = await getSubscriptionByStripeId(subscription.id);
+
+  if (!existingSubscription) {
+    console.log("No matching subscription found in database. Creating new subscription...");
+
+    // Create a new subscription record in the database
+    const productId = subscription.items.data[0]?.plan.product;
+    const product = typeof productId === "string" ? await stripe.products.retrieve(productId) : null;
+
+    const planId = subscription.items.data[0]?.price.id;
+    const plan = planId ? await stripe.prices.retrieve(planId) : null;
+
+    const interval = plan?.recurring?.interval;
+    const prefixedProductName =
+      interval === "month"
+        ? `MONTHLY-${product?.name || "Unknown"}`
+        : interval === "year"
+          ? `YEARLY-${product?.name || "Unknown"}`
+          : product?.name || "Unknown";
+
+    await createSubscription(
+      user.id,
+      subscription.id,
+      prefixedProductName,
+      subscription.status,
+      subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
+      subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : new Date()
+    );
+
+    console.log("Subscription successfully created in database.");
+
+    // Update the user's Stripe subscription ID
+    await saveStripeCustomerId(user.id, subscription.id);
+    console.log("User's Stripe subscription ID updated successfully.");
+  } else {
+    console.log("Subscription already exists in database. Updating status...");
+
+    // Update the existing subscription in the database
+    await updateSubscription(existingSubscription.id, {
+      status: subscription.status,
+      next_billing_date: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : null,
+    });
+
+    console.log("Subscription updated successfully in database.");
+  }
 }
 
 async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
