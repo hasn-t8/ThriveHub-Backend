@@ -2,10 +2,8 @@ import { Router, Response } from "express";
 import { check } from "express-validator";
 import { verifyToken } from "../middleware/authenticate";
 import { AuthenticatedRequest } from "../types/authenticated-request";
-import {
-  findStripeCustomerByUserId,
-  saveStripeCustomerId,
-} from "../models/user.models";
+import { findStripeCustomerByUserId, saveStripeCustomerId } from "../models/user.models";
+import { createOrSwitchSubscription } from "../services/subscriptions.service";
 import Stripe from "stripe";
 import {
   getSubscriptionsByUser,
@@ -27,7 +25,7 @@ if (process.env.NODE_ENV === "development") {
 const router = Router();
 
 // Validation middleware for subscription creation
-const validateSubscription = [
+const validateSubscriptionPlanType = [
   check("plan")
     .isIn(["basic_monthly", "basic_yearly", "premium_monthly", "premium_yearly"])
     .withMessage("Invalid plan type"),
@@ -83,101 +81,31 @@ router.delete(
   }
 );
 
+// POST route for subscription updates
 router.post(
   "/subscription",
   verifyToken,
-  validateSubscription,
+  validateSubscriptionPlanType,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const userEmail = req.user?.email;
+    const { plan } = req.body;
 
     if (!userId || !userEmail) {
-      res.status(400).json({ error: "User ID and email are required" });
+      res.status(400).json({ error: "User ID and email are required." });
       return;
     }
-
-    if (!req.body.plan) {
-      res.status(400).json({ error: "Plan is required" });
-      return;
-    } else {
-      if (
-        req.body.plan !== "basic_monthly" &&
-        req.body.plan !== "basic_yearly" &&
-        req.body.plan !== "premium_monthly" &&
-        req.body.plan !== "premium_yearly"
-      ) {
-        res.status(400).json({ error: "Invalid plan type" });
-        return;
-      }
-    }
-    const plan = req.body.plan;
 
     try {
-      // Retrieve or Create Stripe Customer
-      const existingCustomer: string | null = await findStripeCustomerByUserId(userId);
-      console.log("existingCustomer", existingCustomer);
-
-      let stripeCustomer: Stripe.Customer;
-
-      if (existingCustomer) {
-        stripeCustomer = (await stripe.customers.retrieve(existingCustomer)) as Stripe.Customer;
-      } else {
-        console.log("Creating new Stripe customer");
-        stripeCustomer = await stripe.customers.create({ email: userEmail });
-        await saveStripeCustomerId(userId, stripeCustomer.id);
-      }
-
-      if (!stripeCustomer || "deleted" in stripeCustomer) {
-        console.log("Failed to retrieve the Stripe customer or the customer is deleted.");
-        stripeCustomer = await stripe.customers.create({ email: userEmail });
-        await saveStripeCustomerId(userId, stripeCustomer.id);
-      }
-
-      const plan_id = getPlan(plan);
-      console.log("plan_id", plan_id);
-
-      //Check if the existing plan is already active. if so, return an error
-      const subscriptions = await stripe.subscriptions.list({
-        customer: stripeCustomer.id,
-        status: "active",
-      });
-      let user_switching_subscription = false;
-
-      for (const subscription of subscriptions.data) {
-        if (subscription.items.data[0].plan.id === getPlan(plan)) {
-          console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
-          res.status(400).json({ error: "Subscription already exists" });
-          return;
-        } else {
-          console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
-          user_switching_subscription = true;
-        }
-      }
-      console.log("user_switching_subscription", user_switching_subscription);
-
-      // //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
-      const session = await stripe.checkout.sessions.create({
-        cancel_url: website_url + "/pricing",
-        success_url: website_url + "/pricing?session_id={CHECKOUT_SESSION_ID}&id=" + userId,
-        customer: stripeCustomer.id,
-        line_items: [
-          {
-            price: plan_id,
-            quantity: 1,
-          },
-        ],
-        mode: "subscription",
-      });
-
-      // Create a Checkout record
-      createCheckout(userId, plan, plan_id, session.id, "pending", "none", {});
-
-      res.status(200).json(session.url);
-      return;
+      const sessionUrl = await createOrSwitchSubscription(userId, userEmail, plan);
+      res.status(200).json({ url: sessionUrl });
     } catch (error) {
-      console.error("Error creating setup intent:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-      return;
+      if (error instanceof Error) {
+        console.error("Error updating subscription:", error.message);
+      } else {
+        console.error("Error updating subscription:", error);
+      }
+      res.status(400).json({ error: (error as Error).message });
     }
   }
 );

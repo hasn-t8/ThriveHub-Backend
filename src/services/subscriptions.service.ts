@@ -11,7 +11,7 @@ const stripeClient = stripe;
 /**
  * Handles subscription updates, including upgrades and downgrades.
  */
-export const updateSubscription = async (
+export const createOrSwitchSubscription = async (
   userId: number,
   userEmail: string,
   plan: string
