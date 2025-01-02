@@ -138,20 +138,8 @@ router.post(
         console.log("Failed to retrieve the Stripe customer or the customer is deleted.");
         stripeCustomer = await stripe.customers.create({ email: userEmail });
         await saveStripeCustomerId(userId, stripeCustomer.id);
-        // throw new Error("Failed to retrieve the Stripe customer or the customer is deleted.");
       }
 
-      // if (subscriptions.data.length > 0) {
-      //   res.status(400).json({ error: "Subscription already exists" });
-      //   return;
-      // }
-
-      // const prices = await stripe.prices.list({
-      //   lookup_keys: [req.body.lookup_key],
-      //   expand: ['data.product'],
-      // });
-
-      // const plan = "basic_monthly";
       const plan_id = getPlan(plan);
       console.log("plan_id", plan_id);
 
@@ -161,24 +149,20 @@ router.post(
         status: "active",
       });
       let user_switching_subscription = false;
-      let active_subscription = '';
-      // console.log('subscriptions', subscriptions);
-      for (const subscription of subscriptions.data) {
-        // console.log("subscription", subscription);
 
+      for (const subscription of subscriptions.data) {
         if (subscription.items.data[0].plan.id === getPlan(plan)) {
-          // console.log("------<<<>>>------");
           console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
           res.status(400).json({ error: "Subscription already exists" });
           return;
         } else {
-          console.log('subscription.items.data[0].plan.id', subscription.items.data[0].plan.id);
+          console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
           user_switching_subscription = true;
         }
       }
       console.log("user_switching_subscription", user_switching_subscription);
-      // //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
 
+      // //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
       const session = await stripe.checkout.sessions.create({
         cancel_url: website_url + "/pricing",
         success_url: website_url + "/pricing?session_id={CHECKOUT_SESSION_ID}&id=" + userId,
@@ -197,20 +181,6 @@ router.post(
 
       res.status(200).json(session.url);
       return;
-
-      // // Create a Setup Intent for the Customer
-      // const setupIntent = await stripe.setupIntents.create({
-      //   customer: stripeCustomer.id,
-      //   usage: "off_session",
-      //   return_url: process.env.STRIPE_RETURN_URL,
-      // });
-
-      // res.status(200).json({
-      //   // url: setupIntent.next_action.use_stripe_sdk.url,
-      //   clientSecret: setupIntent.client_secret,
-      //   customer_id: stripeCustomer.id,
-      // });
-      // return;
     } catch (error) {
       console.error("Error creating setup intent:", error);
       res.status(500).json({ error: "Internal Server Error" });
