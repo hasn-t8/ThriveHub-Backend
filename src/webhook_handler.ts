@@ -86,11 +86,12 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
         const plan = await stripe.prices.retrieve(planId);
         const interval = plan.recurring?.interval;
 
+        // Add prefix based on interval
         const prefixedProductName =
           interval === "month"
-            ? `Monthly - ${product.name}`
+            ? `MONTHLY-${product.name}`
             : interval === "year"
-              ? `Yearly - ${product.name}`
+              ? `YEARLY-${product.name}`
               : product.name;
 
         const existingSubscription = await getSubscriptionByStripeId(checkoutSession.subscription);
@@ -166,9 +167,9 @@ async function handleCustomerSubscriptionCreated(subscription: Stripe.Subscripti
 
   const prefixedProductName =
     interval === "month"
-      ? `Monthly - ${product.name}`
+      ? `MONTHLY-${product.name}`
       : interval === "year"
-        ? `Yearly - ${product.name}`
+        ? `YEARLY-${product.name}`
         : product.name;
 
   const existingSubscription = await getSubscriptionByStripeId(subscription.id);
