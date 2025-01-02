@@ -1,16 +1,8 @@
-import express, { Router, Request, Response } from "express";
-import { check, validationResult } from "express-validator";
+import { Router, Response } from "express";
+import { check } from "express-validator";
 import { verifyToken } from "../middleware/authenticate";
 import { AuthenticatedRequest } from "../types/authenticated-request";
-import { recordPayment } from "../models/payments-history.models";
 import {
-  recordWebhookEvent,
-  handleSubscriptionCreated,
-  handleSubscriptionUpdated,
-  handleSubscriptionDeleted,
-} from "../models/webhooks-stripe.models";
-import {
-  findUserByStripeCustomerId,
   findStripeCustomerByUserId,
   saveStripeCustomerId,
 } from "../models/user.models";
@@ -24,7 +16,7 @@ import {
 import { createCheckout } from "../models/checkouts.models";
 
 import stripe from "../config/stripe";
-// const endpointSecret = 'whsec_8ba5198a77107a175a6378a939be8dce21ca5d6d7563244337d67170aaba3a63';
+
 let website_url;
 if (process.env.NODE_ENV === "development") {
   website_url = "http://localhost:5173";
@@ -94,6 +86,7 @@ router.delete(
 router.post(
   "/subscription",
   verifyToken,
+  validateSubscription,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
     const userEmail = req.user?.email;
