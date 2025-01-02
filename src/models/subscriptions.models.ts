@@ -20,8 +20,8 @@ export const createSubscription = async (
   plan: string,
   status: string,
   startDate: Date,
+  nextBillingDate?: Date,
   endDate?: Date,
-  nextBillingDate?: Date
 ): Promise<number> => {
   const result = await pool.query(
     `

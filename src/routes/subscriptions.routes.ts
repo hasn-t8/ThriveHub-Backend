@@ -155,12 +155,13 @@ router.post(
       const plan_id = getPlan(plan);
       console.log("plan_id", plan_id);
 
-      //Tcheck if the existing plan is already active. if so, return an error
+      //Check if the existing plan is already active. if so, return an error
       const subscriptions = await stripe.subscriptions.list({
         customer: stripeCustomer.id,
         status: "active",
       });
       let user_switching_subscription = false;
+      let active_subscription = '';
       // console.log('subscriptions', subscriptions);
       for (const subscription of subscriptions.data) {
         // console.log("subscription", subscription);
@@ -171,11 +172,12 @@ router.post(
           res.status(400).json({ error: "Subscription already exists" });
           return;
         } else {
+          console.log('subscription.items.data[0].plan.id', subscription.items.data[0].plan.id);
           user_switching_subscription = true;
         }
       }
       console.log("user_switching_subscription", user_switching_subscription);
-      //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
+      // //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
 
       const session = await stripe.checkout.sessions.create({
         cancel_url: website_url + "/pricing",
@@ -257,7 +259,10 @@ router.post(
           subscription.id,
           product.name,
           subscription.status,
-          subscription.start_date ? new Date(subscription.start_date * 1000) : new Date()
+          subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
+          subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000)
+            : new Date()
         );
       }
       res.status(200).json({ session, subscription, product });
