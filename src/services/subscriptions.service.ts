@@ -9,7 +9,7 @@ const websiteUrl =
 const stripeClient = stripe;
 
 /**
- * Handles subscription updates, including upgrades and downgrades.
+ * Handles subscription creation or switching, reusing default payment methods when available.
  */
 export const createOrSwitchSubscription = async (
   userId: number,
@@ -29,7 +29,13 @@ export const createOrSwitchSubscription = async (
     await saveStripeCustomerId(userId, stripeCustomer.id);
   }
 
-  // List active subscriptions for the customer
+  // Check if the customer has a default payment method
+  const paymentMethods = await stripeClient.paymentMethods.list({
+    customer: stripeCustomer.id,
+    type: "card",
+  });
+
+  const defaultPaymentMethod = paymentMethods.data[0]; // Assume the first one is default
   const subscriptions = await stripeClient.subscriptions.list({
     customer: stripeCustomer.id,
     status: "active",
@@ -50,7 +56,22 @@ export const createOrSwitchSubscription = async (
     }
   }
 
-  // Create new Checkout session for the new plan
+  // If default payment method exists, create the subscription directly
+  if (defaultPaymentMethod) {
+    const newSubscription = await stripeClient.subscriptions.create({
+      customer: stripeCustomer.id,
+      items: [{ price: planId }],
+      default_payment_method: defaultPaymentMethod.id,
+      expand: ["latest_invoice.payment_intent"],
+    });
+
+    // Record the subscription creation
+    await createCheckout(userId, plan, planId, newSubscription.id, "pending", "none", {});
+
+    return `Subscription switched successfully. Subscription ID: ${newSubscription.id}`;
+  }
+
+  // If no default payment method, fallback to Checkout session
   const session = await stripeClient.checkout.sessions.create({
     cancel_url: `${websiteUrl}/pricing`,
     success_url: `${websiteUrl}/pricing?session_id={CHECKOUT_SESSION_ID}&id=${userId}`,
