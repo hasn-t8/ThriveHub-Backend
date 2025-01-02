@@ -250,3 +250,22 @@ export const getBusinessProfileByBusinessProfileId = async (
 
   return result.rows.length > 0 ? result.rows[0] : null;
 };
+
+/** --------------------- Verify Business Key Point Owner --------------------- */
+export const verifyBusinessOwner = async (userId: number, businessProfileId: number): Promise<boolean> => {
+  const query = `
+  SELECT 
+    p.id AS profile_id, 
+    pb.id AS business_profile_id, 
+    pb.*
+  FROM profiles p
+  INNER JOIN profiles_business pb ON p.id = pb.profile_id
+  WHERE p.profile_type = 'business' AND pb.id = $2 AND p.user_id = $1
+`;
+
+  const result = await pool.query(query, [userId, businessProfileId]);
+  if (result.rows.length === 0) {
+    return false;
+  }
+  return true;
+};

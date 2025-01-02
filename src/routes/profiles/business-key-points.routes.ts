@@ -1,9 +1,11 @@
 import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
-import { verifyToken } from "../../middleware/authenticate";
+import { verifyToken, verifyAdmin } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import {
   createBusinessKeyPoint,
+  verifyBusinessKeyPointOwner,
+  verifyBusinessKeyPointNameOwner,
   createBusinessKeyPointName,
   deleteBusinessKeyPoint,
   deleteBusinessKeyPointName,
@@ -18,6 +20,12 @@ const router = Router();
 /** --------------------- Validation --------------------- */
 const validateKeyPoint = [
   check("businessProfileId").isInt().withMessage("Business Profile ID must be an integer"),
+  check("keyPointNameId").isInt().withMessage("Key Point Name ID must be an integer"),
+  check("type").isString().withMessage("Type must be a string"),
+  check("text").isString().withMessage("Text must be a string"),
+];
+
+const validateKeyPointToUpdate = [
   check("keyPointNameId").isInt().withMessage("Key Point Name ID must be an integer"),
   check("type").isString().withMessage("Type must be a string"),
   check("text").isString().withMessage("Text must be a string"),
@@ -53,9 +61,11 @@ router.post(
         userId!
       );
       res.status(201).json({ message: "Business Key Point created successfully", keyPointId });
+      return;
     } catch (error) {
       console.error("Error creating business key point:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -64,6 +74,7 @@ router.post(
 router.put(
   "/business-key-points/:id",
   verifyToken,
+  validateKeyPointToUpdate,
   async (req: AuthenticatedRequest, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -73,6 +84,8 @@ router.put(
 
     const keyPointId = parseInt(req.params.id, 10);
     if (isNaN(keyPointId)) {
+      console.log('--- keyPointId', keyPointId);
+      
       res.status(400).json({ error: "Invalid key point ID" });
       return;
     }
@@ -83,6 +96,7 @@ router.put(
     try {
       await updateBusinessKeyPoint(keyPointId, keyPointNameId, type, text, userId!);
       res.status(200).json({ message: "Business Key Point updated successfully" });
+      return;
     } catch (error) {
       if ((error as Error).message === "Key Point not found") {
         res.status(404).json({ error: "Key Point not found" });
@@ -90,6 +104,7 @@ router.put(
       }
       console.error("Error updating business key point:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -122,11 +137,11 @@ router.put(
 //   }
 // );
 
-
 /** --------------------- Create Business Key Point Name --------------------- */
 router.post(
   "/business-key-point-names",
   verifyToken,
+  verifyAdmin,
   validateKeyPointName,
   async (req: AuthenticatedRequest, res: Response) => {
     const errors = validationResult(req);
@@ -137,10 +152,10 @@ router.post(
 
     const { name, type } = req.body;
     const userId = req.user?.id;
-    const userType = req.user?.type; // Assuming `type` is part of the authenticated user's payload
+    const userType = req.user?.type;
 
     // Check if the user type is allowed
-    if (userType !== "admin" && userType !== "business owner") {
+    if (userType !== "admin") {
       res.status(403).json({ error: "Access denied: Unauthorized user type" });
       return;
     }
@@ -151,8 +166,13 @@ router.post(
         .status(201)
         .json({ message: "Business Key Point Name created successfully", keyPointNameId });
     } catch (error) {
+      if ((error as Error).message === "Business Key Point Name already exists") {
+        res.status(409).json({ error: "Business Key Point Name already exists" });
+        return;
+      }
       console.error("Error creating business key point name:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -174,6 +194,7 @@ router.get(
     } catch (error) {
       console.error("Error fetching business key points:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -207,6 +228,7 @@ router.get(
     } catch (error) {
       console.error("Error fetching business key point names:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -215,21 +237,41 @@ router.get(
 router.delete(
   "/business-key-points/:id",
   verifyToken,
+  verifyAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     const keyPointId = parseInt(req.params.id, 10);
 
-    //TODO: only allow the owner and the admin
     if (isNaN(keyPointId)) {
       res.status(400).json({ error: "Invalid Key Point ID" });
+      return;
+    }
+
+    const userId = req.user?.id;
+    const userType = req.user?.type;
+
+    if (!userId) {
+      res.status(400).json({ error: "Invalid User ID" });
+      return;
+    }
+
+    const resultOwnerVerify = await verifyBusinessKeyPointOwner(userId, keyPointId);
+
+    console.log('resultOwnerVerify', resultOwnerVerify);
+    
+    // Check if the user type is allowed
+    if (userType !== "admin" && !resultOwnerVerify) {
+      res.status(403).json({ error: "Access denied: Unauthorized user type" });
       return;
     }
 
     try {
       await deleteBusinessKeyPoint(keyPointId);
       res.status(200).json({ message: "Business Key Point deleted successfully" });
+      return;
     } catch (error) {
       console.error("Error deleting business key point:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );
@@ -238,21 +280,41 @@ router.delete(
 router.delete(
   "/business-key-point-names/:id",
   verifyToken,
+  verifyAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     const keyPointNameId = parseInt(req.params.id, 10);
 
-    //TODO: only allow the creater and the admin
+    console.log("keyPointNameId", keyPointNameId);
+
     if (isNaN(keyPointNameId)) {
       res.status(400).json({ error: "Invalid Key Point Name ID" });
+      return;
+    }
+
+    const userId = req.user?.id;
+    const userType = req.user?.type;
+
+    if (!userId) {
+      res.status(400).json({ error: "Invalid User ID" });
+      return;
+    }
+
+    const resultOwnerVerify = await verifyBusinessKeyPointNameOwner(userId, keyPointNameId);
+    
+    // Check if the user type is allowed
+    if (userType !== "admin" && !resultOwnerVerify) {
+      res.status(403).json({ error: "Access denied: Unauthorized user type to update keypointName" });
       return;
     }
 
     try {
       await deleteBusinessKeyPointName(keyPointNameId);
       res.status(200).json({ message: "Business Key Point Name deleted successfully" });
+      return;
     } catch (error) {
       console.error("Error deleting business key point name:", error);
       res.status(500).json({ error: "Internal Server Error" });
+      return;
     }
   }
 );

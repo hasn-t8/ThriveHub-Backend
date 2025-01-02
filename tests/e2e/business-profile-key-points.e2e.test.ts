@@ -20,6 +20,14 @@ describe("Business Key Points and Key Point Names Endpoints", () => {
     );
     userId = userResult.rows[0].id;
 
+    const adminTypeResult = await pool.query("SELECT id FROM user_types WHERE type = 'admin'");
+    const adminTypeId = adminTypeResult.rows[0].id;
+    
+    await pool.query(
+      "INSERT INTO user_user_types (user_id, type_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [userId, adminTypeId]
+    );
+
     token = jwt.sign({ id: userId, email: uniqueEmail, tokenVersion: 0 }, JWT_SECRET, {
       expiresIn: "1h",
     });
@@ -43,6 +51,7 @@ describe("Business Key Points and Key Point Names Endpoints", () => {
     await pool.query("DELETE FROM profiles_business WHERE id = $1", [businessProfileId]);
     await pool.query("DELETE FROM profiles WHERE id = $1", [profileId]);
     await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    await pool.query("DELETE FROM user_user_types WHERE user_id = $1", [userId]);
     await pool.end();
   });
 
@@ -50,7 +59,7 @@ describe("Business Key Points and Key Point Names Endpoints", () => {
     const response = await request(app)
       .post("/api/business-key-point-names")
       .set("Authorization", `Bearer ${token}`)
-      .send({ name: "Test Key Point Name", type: "feature" });
+      .send({ name: "Test Key Point Name 007", type: "feature" });
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("message", "Business Key Point Name created successfully");
@@ -83,7 +92,7 @@ describe("Business Key Points and Key Point Names Endpoints", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({
         keyPointNameId,
-        type: "why_us",
+        type: "feature",
         text: "Updated business key point text",
       });
 
