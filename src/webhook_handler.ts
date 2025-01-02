@@ -8,176 +8,132 @@ import {
   updateSubscription,
 } from "./models/subscriptions.models";
 
-export interface Checkout {
-  status: string; // add the status property
-  // other properties
-}
+export async function webHookHandler(event: Stripe.Event): Promise<void> {
+  console.log(`Processing event type: ${event.type}`);
 
-export async function webHookHandler(event: Stripe.Event) {
-  switch (event.type) {
-    case "payment_intent.succeeded":
-      const paymentIntent = event.data.object;
-      console.log("***************************************");
+  try {
+    switch (event.type) {
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
 
-      //   console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
-      handlePaymentIntentSucceeded(paymentIntent);
-      console.log("***************************************");
-      // Then define and call a method to handle the successful payment intent.
-      break;
+      case "payment_method.attached":
+        await handlePaymentMethodAttached(event.data.object as Stripe.PaymentMethod);
+        break;
 
-    case "payment_method.attached":
-      const paymentMethod = event.data.object;
-      //   console.log("PaymentMethod was attached to a Customer!");
-      //   console.log("paymentMethod", paymentMethod);
-      console.log("---------------------------------");
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
 
-      // Then define and call a method to handle the successful attachment of a PaymentMethod.
-      handlePaymentMethodAttached(paymentMethod);
-      console.log("---------------------------------");
-      break;
+      case "customer.subscription.deleted":
+        await handleCustomerSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
 
-    case "checkout.session.completed":
-      const eventObject = event.data.object;
-      // Payment is successful and the subscription is created.
-      // You should provision the subscription and save the customer ID to your database.
-      console.log("Checkout session was completed!");
-      handleCheckoutCompleted(eventObject);
-      break;
-
-    case "customer.subscription.deleted":
-      console.log("Customer subscription was deleted!");
-      handleCustomerSubscriptionDeleted(event.data.object);
-      break;
-
-    default:
-      // Unexpected event type
-      console.log(`Unhandled event type ${event.type}.`);
-
-    //   if (
-    //     event.type === 'checkout.session.completed'
-    //     || event.type === 'checkout.session.async_payment_succeeded'
-    //   ) {
-    //     fulfillCheckout(event.data.object.id);
-    //   }
+      default:
+        console.log(`Unhandled event type ${event.type}.`);
+        break;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error processing event type ${event.type}:`, error.message);
+    } else {
+      console.error(`Error processing event type ${event.type}:`, error);
+    }
   }
 }
 
-async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  // Fulfill any orders, e-mail receipts, etc
-  console.log("PaymentIntent was successful!");
-  //   console.log(paymentIntent);
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  console.log("PaymentIntent succeeded!");
+  console.log(`PaymentIntent for amount ${paymentIntent.amount} was successful.`);
+  // Additional logic for successful payment can go here
 }
 
-async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod) {
-  // Update payment method on customer
-  console.log("PaymentMethod was attached to a Customer!");
-  //   console.log(paymentMethod);
+async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod): Promise<void> {
+  console.log("PaymentMethod was attached to a Customer.");
+  // Additional logic for handling attached payment methods
 }
 
-async function handleCustomerSubscriptionDeleted(event: Stripe.Subscription) {
-  console.log("handleCustomerSubscriptionDeleted - Customer subscription was deleted!");
-  console.log(event);
-  canceSubscription(event.id);
-  return;
-}
+async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session): Promise<void> {
+  console.log("Checkout session completed!");
 
-async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session) {
-  // Payment is successful and the subscription is created.
-  // You should provision the subscription and save the customer ID to your database.
-  console.log("handleCheckoutCompleted - Checkout session was completed!!!");
   const checkout = await findCheckoutBySessionId(checkoutSession.id);
   if (!checkout) {
-    console.log("Checkout not found!");
+    console.error("Checkout not found!");
     return;
   }
-  console.log(checkoutSession);
+
   await updateCheckout(checkoutSession.id, {
     session_completed_status: "completed",
     metadata: checkoutSession,
   });
 
-  let subscription = null;
-  let product = null;
-
-  //update the subscription status in the subscriptions table. Create this new subscription.
   if (checkoutSession.subscription && typeof checkoutSession.subscription === "string") {
-    subscription = await stripe.subscriptions.retrieve(checkoutSession.subscription);
-    product = null;
+    const subscription = await stripe.subscriptions.retrieve(checkoutSession.subscription);
 
-    if (subscription?.items.data[0].plan.product) {
-      console.log("subscription", subscription);
-      const productId = subscription?.items.data[0].plan.product;
+    if (subscription.items.data[0]?.plan.product) {
+      const productId = subscription.items.data[0].plan.product;
+      const product = await stripe.products.retrieve(productId as string);
 
-      if (typeof productId === "string") {
-        product = await stripe.products.retrieve(productId);
+      if (product) {
+        const existingSubscription = await getSubscriptionByStripeId(checkoutSession.subscription);
 
-        if (product) {
-          // Check if the subscription exists in db
-          const existingSubscription = await getSubscriptionByStripeId(
-            checkoutSession.subscription
-          );
-
-          if (existingSubscription) {
-            console.log("Webhook: Subscription already exists in db");
-            await updateSubscription(existingSubscription.id, {
-              status: subscription.status,
-              next_billing_date: subscription.current_period_end
-                ? new Date(subscription.current_period_end * 1000)
-                : new Date(),
-            });
-          } else {
-            await createSubscription(
-              checkout.user_id,
-              checkoutSession.subscription,
-              product.name,
-              subscription.status,
-              subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
-              subscription.current_period_end
-                ? new Date(subscription.current_period_end * 1000)
-                : new Date()
-            );
-          }
+        if (existingSubscription) {
+          console.log("Updating existing subscription in database.");
+          await updateSubscription(existingSubscription.id, {
+            status: subscription.status,
+            next_billing_date: subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000)
+              : new Date(),
+          });
         } else {
-          console.log("webhook: Invalid subscription type");
+          console.log("Creating new subscription in database.");
+          await createSubscription(
+            checkout.user_id,
+            checkoutSession.subscription,
+            product.name,
+            subscription.status,
+            subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
+            subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000)
+              : new Date()
+          );
         }
       } else {
-        console.log("webhook: Invalid subscription plan type");
+        console.error("Product not found for subscription.");
       }
     } else {
-      console.log("webhook: Invalid subscription plan product type");
+      console.error("Invalid subscription plan product type.");
     }
   } else {
-    console.log("webhook: Invalid checkoutSession.subscription type");
+    console.error("Invalid or missing subscription in checkout session.");
   }
 
-  //TODO: Cancel other subscriptions. Change status to 'canceled'. Update the end date to today.
-  // Find other subs in the stripe. and cancel them.
-
-  //TODO: the customer.subscription.deleted event.
+  // Optional: Cancel other subscriptions
+  if (typeof checkoutSession.subscription === "string") {
+    await cancelOtherSubscriptions(checkout.user_id, checkoutSession.subscription);
+  } else {
+    console.error("Invalid subscription ID for canceling other subscriptions.");
+  }
 }
 
-// async function cancelOtherSubscriptions(checkoutSession: Stripe.Checkout.Session) {
-//   //Check if the existing plan is already active. if so, return an error
-//   const subscriptions = await stripe.subscriptions.list({
-//     customer: stripeCustomer.id,
-//     status: "active",
-//   });
-//   let user_switching_subscription = false;
-//   let active_subscription = "";
-//   // console.log('subscriptions', subscriptions);
-//   for (const subscription of subscriptions.data) {
-//     // console.log("subscription", subscription);
+async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
+  console.log("Customer subscription deleted!");
+  await canceSubscription(subscription.id);
+}
 
-//     if (subscription.items.data[0].plan.id === getPlan(plan)) {
-//       // console.log("------<<<>>>------");
-//       console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
-//       res.status(400).json({ error: "Subscription already exists" });
-//       return;
-//     } else {
-//       console.log("subscription.items.data[0].plan.id", subscription.items.data[0].plan.id);
-//       user_switching_subscription = true;
-//     }
-//   }
-//   console.log("user_switching_subscription", user_switching_subscription);
-//   //TODO: check if the user is switching subscription. If so, cancel the existing subscription and create a new one. Handle on webhook.
-// }
+async function cancelOtherSubscriptions(
+  userId: number,
+  currentSubscriptionId: string
+): Promise<void> {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: userId.toString(),
+    status: "active",
+  });
+
+  for (const subscription of subscriptions.data) {
+    if (subscription.id !== currentSubscriptionId) {
+      console.log(`Canceling subscription ID: ${subscription.id}`);
+      await stripe.subscriptions.update(subscription.id, { cancel_at_period_end: true });
+    }
+  }
+}
