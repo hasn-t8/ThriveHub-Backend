@@ -25,6 +25,8 @@ import blogPosts from './blog/blog-posts.routes';
 import blogCategories from './blog/categories.routes';
 import imageUpload from './blog/image-uploads.routes';
 
+import subsciptions from './subscriptions.routes';
+
 
 
 router.use(authLoginRoute);
@@ -57,6 +59,8 @@ router.use(likes);
 router.use(blogPosts);
 router.use(blogCategories);
 router.use(imageUpload);
+
+router.use(subsciptions);
 
 
 
