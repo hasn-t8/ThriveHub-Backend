@@ -4,6 +4,8 @@ import { createUser, findUserByEmail, assignUserTypes, saveVerificationCode, fin
 import { createBusinessProfile } from "../../models/business-profile.models";
 import { check, validationResult } from "express-validator";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET, JWT_EXPIRATION } from "../../config/auth";
 
 const router = Router();
 
@@ -83,6 +85,29 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       email_verification_code: verificationCode,
     };
 
+    
+
+    const userDetails = await findUserByEmail(email);
+    console.log('userDetails:', userDetails);
+    if(!userDetails) {
+      res.status(500).json({ error: "User registration failed. Internal Server Error" });
+      return;
+    }
+    const payload = {
+      id: userDetails.id,
+      email: userDetails.email,
+      full_name: userDetails.full_name,
+      tokenVersion: userDetails.token_version,
+      userTypes: userDetails.userTypes,
+      city: userDetails.city,
+      profileImage: userDetails.profileImage,
+    };
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+
+    // console.log('Login successful', token);
+    
+    
     // Send activation email
     await sendMail(
       email,
@@ -90,8 +115,7 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       "welcome email",
       emailVariables
     );
-
-    res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile });
+    res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile, token });
     return;
   } catch (error) {
     if (error instanceof Error && error.message === "Organization name already exists") {
