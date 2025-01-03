@@ -143,6 +143,19 @@ export const updateReview = async (
     client.release();
   }
 };
+/**
+ * Get all reviews in the system.
+ * @returns A list of all reviews
+ */
+export const getAllReviews = async (): Promise<Review[]> => {
+  const result = await pool.query(
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
+     FROM reviews
+     ORDER BY created_at DESC`
+  );
+
+  return result.rows;
+};
 
 /**
  * Get all reviews for a specific business.
@@ -156,6 +169,26 @@ export const getReviewsForBusiness = async (businessId: number): Promise<Review[
      WHERE business_id = $1
      ORDER BY created_at DESC`,
     [businessId]
+  );
+
+  return result.rows;
+};
+
+
+/**
+ * Get reviews by their approval status.
+ * @param approvalStatus The approval status (true for approved, false for pending/denied).
+ * @returns A list of reviews matching the specified approval status
+ */
+export const getReviewsByApprovalStatus = async (
+  approvalStatus: boolean
+): Promise<Review[]> => {
+  const result = await pool.query(
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
+     FROM reviews
+     WHERE approval_status = $1
+     ORDER BY created_at DESC`,
+    [approvalStatus]
   );
 
   return result.rows;

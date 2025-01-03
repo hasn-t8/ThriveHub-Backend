@@ -10,7 +10,9 @@ import {
   getReviewsForBusiness,
   getReviewsByUserId,
   deleteReview,
-  getReviewById
+  getReviewById,
+  getAllReviews,
+  getReviewsByApprovalStatus
 } from "../../models/reviews.models";
 import pool from "../../config/db";
 
@@ -31,6 +33,53 @@ const validatePUTReview = [
   check("feedback").isString().withMessage("Feedback must be a string"),
 ];
 
+// Get all reviews
+router.get(
+  "/reviews",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const reviews = await getAllReviews();
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found" });
+        return;
+      }
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching all reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+
+// Get reviews by approval status
+router.get(
+  "/reviews/approval-status/:status",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { status } = req.params;
+
+    // Validate the approval status
+    if (status !== "true" && status !== "false") {
+      res.status(400).json({ error: "Invalid status value. Use 'true' or 'false'." });
+      return;
+    }
+
+    try {
+      const isApproved = status === "true";
+      const reviews = await getReviewsByApprovalStatus(isApproved);
+
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found for the given approval status." });
+        return;
+      }
+
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews by approval status:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 // Get all reviews for a specific business
 router.get(
   "/reviews/business/:businessId",
