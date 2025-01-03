@@ -106,7 +106,9 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
           prefixedProductName,
           subscription.status,
           subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
-          subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : new Date()
+          subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000)
+            : new Date()
         );
       } else {
         console.log("Subscription already exists. Updating status.");
@@ -131,9 +133,10 @@ async function handleCustomerSubscriptionCreated(subscription: Stripe.Subscripti
 async function handleCustomerSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
   console.log("Customer subscription updated!");
 
-  if (subscription.cancel_at_period_end) {
+  // Check if the subscription is set to change at the end of the current billing cycle
+  if (subscription.pending_update) {
     console.log(
-      `Subscription ${subscription.id} will switch to a new plan at the end of the billing cycle.`
+      `Subscription ${subscription.id} has a pending update that will take effect at the next billing cycle.`
     );
   }
 

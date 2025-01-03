@@ -132,8 +132,6 @@ export const getPlan = (plan: string): string => {
 
 export async function findCustomerByEmail(email: string): Promise<Stripe.Customer | null> {
   try {
-    console.log('findin by email>>>>> ', email);
-    
     const customers = await stripeClient.customers.list({
       email, // Filter by email
       limit: 1, // Only fetch the first matching customer
@@ -141,8 +139,11 @@ export async function findCustomerByEmail(email: string): Promise<Stripe.Custome
 
     // Check if any customer matches
     if (customers.data.length > 0) {
-      console.log('customers.data[0]>>>>> ', customers.data[0]);
-      
+      let customer = customers.data[0];
+      if (customer.deleted) {
+        console.error(`Customer found with email ${email} is deleted.`);
+        return null;
+      }
       return customers.data[0]; // Return the first match
     }
 
@@ -156,6 +157,10 @@ export async function findCustomerByEmail(email: string): Promise<Stripe.Custome
 export async function retrieveStripeCustomer(customerId: string): Promise<Stripe.Customer | null> {
   try {
     const customer = (await stripeClient.customers.retrieve(customerId)) as Stripe.Customer;
+    if (customer.deleted) {
+      console.error(`Customer found with ID ${customerId} is deleted.`);
+      return null;
+    }
     return customer;
   } catch (error) {
     console.error(`Error retrieving Stripe customer with ID ${customerId}:`, error);
