@@ -10,6 +10,7 @@ import {
   getReviewsForBusiness,
   getReviewsByUserId,
   deleteReview,
+  getReviewById
 } from "../../models/reviews.models";
 import pool from "../../config/db";
 
@@ -252,6 +253,32 @@ router.get(
       res.status(200).json(reviews);
     } catch (error) {
       console.error("Error fetching user reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+// Get a review by its ID
+router.get(
+  "/reviews/:reviewId",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const reviewId = parseInt(req.params.reviewId, 10);
+
+    if (isNaN(reviewId)) {
+      res.status(400).json({ error: "Invalid Review ID" });
+      return;
+    }
+
+    try {
+      const review = await getReviewById(reviewId);
+
+      if (!review) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      res.status(200).json(review);
+    } catch (error) {
+      console.error("Error fetching review:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }

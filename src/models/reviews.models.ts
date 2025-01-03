@@ -226,3 +226,25 @@ export const getReviewsByUserId = async (userId: number): Promise<Review[]> => {
 
   return result.rows;
 };
+
+
+
+/**
+ * Get a review by its ID.
+ * @param reviewId The review ID
+ * @returns The review details or null if not found
+ */
+export const getReviewById = async (reviewId: number): Promise<Review | null> => {
+  const result = await pool.query(
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
+     FROM reviews
+     WHERE id = $1`,
+    [reviewId]
+  );
+
+  if (result.rowCount === 0) {
+    return null; // Return null if review not found
+  }
+
+  return result.rows[0]; // Return the review details
+};
