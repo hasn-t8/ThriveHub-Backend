@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { saveStripeCustomerId, findStripeCustomerByUserId } from "../models/user.models";
 import { createCheckout } from "../models/checkouts.models";
 import stripe from "../config/stripe";
+import e from "express";
 
 const websiteUrl =
   process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://thrivehub.ai";
@@ -20,14 +21,31 @@ export const createOrSwitchSubscription = async (
 
   // Retrieve or create Stripe customer
   const existingCustomer = await findStripeCustomerByUserId(userId);
-  let stripeCustomer: Stripe.Customer;
+  console.log("existingCustomer", existingCustomer);
+
+  let retrievedCustomer: Stripe.Customer | null;
+  let stripeCustomer: Stripe.Customer | null = null;
 
   if (existingCustomer) {
-    stripeCustomer = (await stripeClient.customers.retrieve(existingCustomer)) as Stripe.Customer;
-  } else {
+    retrievedCustomer = await retrieveStripeCustomer(existingCustomer);
+    if (!retrievedCustomer) {
+      retrievedCustomer = await findCustomerByEmail(userEmail);
+      if (retrievedCustomer) {
+        await saveStripeCustomerId(userId, retrievedCustomer.id);
+        stripeCustomer = retrievedCustomer;
+      }
+    } else {
+      stripeCustomer = retrievedCustomer;
+    }
+  }
+
+  if (!stripeCustomer) {
     stripeCustomer = await stripeClient.customers.create({ email: userEmail });
     await saveStripeCustomerId(userId, stripeCustomer.id);
   }
+
+  console.log("***** Stripe customer -------------------");
+  console.log("stripeCustomer", stripeCustomer);
 
   // Check if the customer has a default payment method
   const paymentMethods = await stripeClient.paymentMethods.list({
@@ -111,3 +129,36 @@ export const getPlan = (plan: string): string => {
       throw new Error("Invalid plan type.");
   }
 };
+
+export async function findCustomerByEmail(email: string): Promise<Stripe.Customer | null> {
+  try {
+    console.log('findin by email>>>>> ', email);
+    
+    const customers = await stripeClient.customers.list({
+      email, // Filter by email
+      limit: 1, // Only fetch the first matching customer
+    });
+
+    // Check if any customer matches
+    if (customers.data.length > 0) {
+      console.log('customers.data[0]>>>>> ', customers.data[0]);
+      
+      return customers.data[0]; // Return the first match
+    }
+
+    return null; // No matching customer found
+  } catch (error) {
+    console.error("Error retrieving customer by email:", error);
+    throw error;
+  }
+}
+
+export async function retrieveStripeCustomer(customerId: string): Promise<Stripe.Customer | null> {
+  try {
+    const customer = (await stripeClient.customers.retrieve(customerId)) as Stripe.Customer;
+    return customer;
+  } catch (error) {
+    console.error(`Error retrieving Stripe customer with ID ${customerId}:`, error);
+    return null;
+  }
+}
