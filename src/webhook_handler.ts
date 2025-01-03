@@ -47,11 +47,10 @@ export async function webHookHandler(event: Stripe.Event): Promise<void> {
         break;
     }
   } catch (error) {
-    if (error instanceof Error) {
-      console.error(`Error processing event type ${event.type}:`, error.message);
-    } else {
-      console.error(`Error processing event type ${event.type}:`, error);
-    }
+    console.error(
+      `Error processing event type ${event.type}:`,
+      error instanceof Error ? error.message : error
+    );
   }
 }
 
@@ -81,181 +80,64 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
   if (checkoutSession.subscription && typeof checkoutSession.subscription === "string") {
     const subscription = await stripe.subscriptions.retrieve(checkoutSession.subscription);
 
-    if (typeof subscription.items.data[0]?.plan.product === "string") {
-      const productId = subscription.items.data[0].plan.product;
-      const product = await stripe.products.retrieve(productId);
+    if (subscription) {
+      const productId = subscription.items.data[0]?.plan.product;
+      const product =
+        typeof productId === "string" ? await stripe.products.retrieve(productId) : null;
 
-      if (product) {
-        const planId = subscription.items.data[0].price.id;
-        const plan = await stripe.prices.retrieve(planId);
-        const interval = plan.recurring?.interval;
+      const planId = subscription.items.data[0]?.price.id;
+      const plan = planId ? await stripe.prices.retrieve(planId) : null;
 
-        const prefixedProductName =
-          interval === "month"
-            ? `MONTHLY-${product.name}`
-            : interval === "year"
-              ? `YEARLY-${product.name}`
-              : product.name;
+      const interval = plan?.recurring?.interval;
+      const prefixedProductName =
+        interval === "month"
+          ? `MONTHLY-${product?.name || "Unknown"}`
+          : interval === "year"
+            ? `YEARLY-${product?.name || "Unknown"}`
+            : product?.name || "Unknown";
 
-        const existingSubscription = await getSubscriptionByStripeId(checkoutSession.subscription);
+      const existingSubscription = await getSubscriptionByStripeId(subscription.id);
 
-        if (existingSubscription) {
-          console.log("Updating existing subscription in database.");
-          await updateSubscription(existingSubscription.id, {
-            status: subscription.status,
-            next_billing_date: subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000)
-              : new Date(),
-          });
-        } else {
-          console.log("Creating new subscription in database.");
-          await createSubscription(
-            checkout.user_id,
-            checkoutSession.subscription,
-            prefixedProductName,
-            subscription.status,
-            subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
-            subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000)
-              : new Date()
-          );
-        }
+      if (!existingSubscription) {
+        console.log("Creating new subscription in database.");
+        await createSubscription(
+          checkout.user_id,
+          subscription.id,
+          prefixedProductName,
+          subscription.status,
+          subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
+          subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : new Date()
+        );
       } else {
-        console.error("Product not found for subscription.");
+        console.log("Subscription already exists. Updating status.");
+        await updateSubscription(existingSubscription.id, {
+          status: subscription.status,
+          next_billing_date: subscription.current_period_end
+            ? new Date(subscription.current_period_end * 1000)
+            : null,
+        });
       }
     } else {
       console.error("Invalid subscription plan product type.");
     }
-  } else {
-    console.error("Invalid or missing subscription in checkout session.");
-  }
-
-  if (typeof checkoutSession.subscription === "string") {
-    await cancelOtherSubscriptions(checkout.user_id, checkoutSession.subscription);
-  } else {
-    console.error("Invalid subscription ID for canceling other subscriptions.");
   }
 }
 
 async function handleCustomerSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
   console.log("Customer subscription created!");
-
-  const customerId = subscription.customer;
-  if (typeof customerId !== "string") {
-    console.error("Invalid customer ID in subscription event.");
-    return;
-  }
-
-  const user = await findUserByStripeCustomerId(customerId);
-  if (!user) {
-    console.error(`No user found for Stripe customer ID: ${customerId}`);
-    return;
-  }
-
-  const productId = subscription.items.data[0]?.plan.product;
-  if (!productId || typeof productId !== "string") {
-    console.error("Invalid product ID in subscription.");
-    return;
-  }
-
-  const product = await stripe.products.retrieve(productId);
-  if (!product) {
-    console.error("Product not found for subscription.");
-    return;
-  }
-
-  const planId = subscription.items.data[0].price.id;
-  const plan = await stripe.prices.retrieve(planId);
-  const interval = plan.recurring?.interval;
-
-  const prefixedProductName =
-    interval === "month"
-      ? `MONTHLY-${product.name}`
-      : interval === "year"
-        ? `YEARLY-${product.name}`
-        : product.name;
-
-  const existingSubscription = await getSubscriptionByStripeId(subscription.id);
-  if (existingSubscription) {
-    console.log("Subscription already exists in database.");
-    return;
-  }
-
-  await createSubscription(
-    user.id,
-    subscription.id,
-    prefixedProductName,
-    subscription.status,
-    subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
-    subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : new Date()
-  );
-
-  console.log("Subscription successfully created in database.");
+  await processSubscription(subscription, "created");
 }
 
 async function handleCustomerSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
   console.log("Customer subscription updated!");
 
-  const customerId = subscription.customer;
-  if (typeof customerId !== "string") {
-    console.error("Invalid customer ID in subscription update.");
-    return;
-  }
-
-  const user = await findUserByStripeCustomerId(customerId);
-  if (!user) {
-    console.error(`No user found for Stripe customer ID: ${customerId}`);
-    return;
-  }
-
-  // Check if the subscription exists in the database
-  const existingSubscription = await getSubscriptionByStripeId(subscription.id);
-
-  if (!existingSubscription) {
-    console.log("No matching subscription found in database. Creating new subscription...");
-
-    // Create a new subscription record in the database
-    const productId = subscription.items.data[0]?.plan.product;
-    const product = typeof productId === "string" ? await stripe.products.retrieve(productId) : null;
-
-    const planId = subscription.items.data[0]?.price.id;
-    const plan = planId ? await stripe.prices.retrieve(planId) : null;
-
-    const interval = plan?.recurring?.interval;
-    const prefixedProductName =
-      interval === "month"
-        ? `MONTHLY-${product?.name || "Unknown"}`
-        : interval === "year"
-          ? `YEARLY-${product?.name || "Unknown"}`
-          : product?.name || "Unknown";
-
-    await createSubscription(
-      user.id,
-      subscription.id,
-      prefixedProductName,
-      subscription.status,
-      subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
-      subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : new Date()
+  if (subscription.cancel_at_period_end) {
+    console.log(
+      `Subscription ${subscription.id} will switch to a new plan at the end of the billing cycle.`
     );
-
-    console.log("Subscription successfully created in database.");
-
-    // Update the user's Stripe subscription ID
-    await saveStripeCustomerId(user.id, subscription.id);
-    console.log("User's Stripe subscription ID updated successfully.");
-  } else {
-    console.log("Subscription already exists in database. Updating status...");
-
-    // Update the existing subscription in the database
-    await updateSubscription(existingSubscription.id, {
-      status: subscription.status,
-      next_billing_date: subscription.current_period_end
-        ? new Date(subscription.current_period_end * 1000)
-        : null,
-    });
-
-    console.log("Subscription updated successfully in database.");
   }
+
+  await processSubscription(subscription, "updated");
 }
 
 async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
@@ -289,19 +171,59 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
   console.log("Subscription payment successfully updated in database.");
 }
 
-async function cancelOtherSubscriptions(
-  userId: number,
-  currentSubscriptionId: string
+async function processSubscription(
+  subscription: Stripe.Subscription,
+  action: string
 ): Promise<void> {
-  const subscriptions = await stripe.subscriptions.list({
-    customer: userId.toString(),
-    status: "active",
-  });
+  const customerId = subscription.customer;
+  if (typeof customerId !== "string") {
+    console.error(`Invalid customer ID in subscription ${action} event.`);
+    return;
+  }
 
-  for (const subscription of subscriptions.data) {
-    if (subscription.id !== currentSubscriptionId) {
-      console.log(`Canceling subscription ID: ${subscription.id}`);
-      await stripe.subscriptions.update(subscription.id, { cancel_at_period_end: true });
-    }
+  const user = await findUserByStripeCustomerId(customerId);
+  if (!user) {
+    console.error(`No user found for Stripe customer ID: ${customerId}`);
+    return;
+  }
+
+  const productId = subscription.items.data[0]?.plan.product;
+  const product = typeof productId === "string" ? await stripe.products.retrieve(productId) : null;
+
+  const planId = subscription.items.data[0]?.price.id;
+  const plan = planId ? await stripe.prices.retrieve(planId) : null;
+
+  const interval = plan?.recurring?.interval;
+  const prefixedProductName =
+    interval === "month"
+      ? `MONTHLY-${product?.name || "Unknown"}`
+      : interval === "year"
+        ? `YEARLY-${product?.name || "Unknown"}`
+        : product?.name || "Unknown";
+
+  const existingSubscription = await getSubscriptionByStripeId(subscription.id);
+
+  if (!existingSubscription) {
+    console.log(
+      `No matching subscription found in database. Creating new subscription (${action}).`
+    );
+    await createSubscription(
+      user.id,
+      subscription.id,
+      prefixedProductName,
+      subscription.status,
+      subscription.start_date ? new Date(subscription.start_date * 1000) : new Date(),
+      subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : new Date()
+    );
+  } else {
+    console.log(`Updating subscription (${action}) in database.`);
+    await updateSubscription(existingSubscription.id, {
+      status: subscription.status,
+      next_billing_date: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : null,
+    });
   }
 }
