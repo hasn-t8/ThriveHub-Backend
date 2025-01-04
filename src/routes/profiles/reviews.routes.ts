@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
+import { verifyToken, verifyAdmin } from "../../middleware/authenticate";
 import { check, validationResult } from "express-validator";
-import { verifyToken } from "../../middleware/authenticate";
+// import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import { getPoliciesForUser } from "../../models/policy.models";
 import {
@@ -191,9 +192,12 @@ router.put(
 );
 
 // Approve a review
+
+// Approve a review
 router.patch(
   "/reviews/:reviewId/approve",
   verifyToken,
+  verifyAdmin, // Ensure only admins can access this route
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
     if (!userId) {
@@ -209,16 +213,7 @@ router.patch(
     }
 
     try {
-      // Check ownership or admin rights (add appropriate logic here if needed)
-      const isOwner = await checkReviewOwnership(reviewId, userId);
-
-      if (!isOwner) {
-        res
-          .status(403)
-          .json({ error: "You are not authorized to approve this review" });
-        return;
-      }
-
+      // Approve the review directly as only admins can reach here
       await pool.query(
         `UPDATE reviews SET approval_status = TRUE WHERE id = $1`,
         [reviewId]
