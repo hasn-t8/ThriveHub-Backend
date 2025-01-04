@@ -64,13 +64,12 @@ export const authenticate = async (
   }
 };
 
-export const verifyToken = async (
+export const verifyAdmin = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   const token = (req.headers as any).authorization?.split(" ")[1];
-
 
   if (!token) {
     res.status(401).json({ error: "Unauthorized: No token provided" });
@@ -84,18 +83,64 @@ export const verifyToken = async (
       tokenVersion: number;
     };
 
-    
+    const { id, email, tokenVersion } = decoded;
+
+    const result = await pool.query(
+      "SELECT token_version FROM users WHERE id = $1 AND email = $2",
+      [id, email]
+    );
+
+    if (result.rowCount === 0 || result.rows[0].token_version !== tokenVersion) {
+      res.status(401).json({ error: "va1 - Unauthorized: Invalid token" });
+      return;
+    }
+    const userTypeAdmin = await pool.query(`SELECT * FROM user_types WHERE type = $1`, ["admin"]);
+    const adminTypeId = userTypeAdmin.rows[0].id;
+    const userTypeResult = await pool.query(
+      `SELECT * FROM user_user_types WHERE user_id = $1 AND type_id = $2`,
+      [id, adminTypeId]
+    );
+
+    if (userTypeResult.rowCount === 0) {
+      next();
+    }
+
+    if (req.user) {
+      req.user.type = userTypeAdmin.rows[0].type;
+    }
+    // req.user = { id, email, tokenVersion, type: userTypeResult.rows[0].type };
+    next();
+  } catch (error) {
+    console.log("verifyToken: ", error);
+
+    res.status(401).json({ error: "va2 - Unauthorized: Invalid token" });
+  }
+};
+
+export const verifyToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const token = (req.headers as any).authorization?.split(" ")[1];
+
+  if (!token) {
+    res.status(401).json({ error: "Unauthorized: No token provided" });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      id: number;
+      email: string;
+      tokenVersion: number;
+    };
+
     const { id, email, tokenVersion } = decoded;
 
     // console.log('token', token, email, tokenVersion);
-    const result = await pool.query(
-      "SELECT token_version FROM users WHERE id = $1",
-      [id]
-    );
-    if (
-      result.rowCount === 0 ||
-      result.rows[0].token_version !== tokenVersion
-    ) {
+    const result = await pool.query("SELECT token_version FROM users WHERE id = $1", [id]);
+    if (result.rowCount === 0 || result.rows[0].token_version !== tokenVersion) {
       res.status(401).json({ error: "Unauthorized: Invalid token" });
       return;
     }

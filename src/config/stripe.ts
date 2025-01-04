@@ -1,14 +1,14 @@
 import Stripe from "stripe";
 
 // Load the Stripe secret key from environment variables
-const STRIPE_SECRET_KEY: string | undefined = process.env.STRIPE_SECRET_KEY;
+const STRIPE_API_KEY: string | undefined = process.env.STRIPE_API_KEY;
 
-if (!STRIPE_SECRET_KEY) {
+if (!STRIPE_API_KEY) {
   throw new Error("Stripe secret key is not defined in environment variables.");
 }
 
 // Initialize the Stripe instance
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
+const stripe = new Stripe(STRIPE_API_KEY, {
   apiVersion: "2024-12-18.acacia",
   typescript: true,
 });

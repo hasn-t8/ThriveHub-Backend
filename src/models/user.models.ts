@@ -20,7 +20,7 @@ export const findStripeCustomerByUserId = async (
     `SELECT stripe_customer_id FROM users WHERE id = $1`,
     [userId]
   );
-  return result.rows[0]?.stripe_customer_id || null;
+  return result.rows[0]?.stripe_customer_id;
 };
 
 /** Save Stripe Customer ID */

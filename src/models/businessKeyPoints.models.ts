@@ -63,13 +63,21 @@ export const updateBusinessKeyPoint = async (
   }
 };
 
-
 /** --------------------- Create Business Key Point Name --------------------- */
 export const createBusinessKeyPointName = async (
   name: string,
   type: string,
   userId: number
 ): Promise<number> => {
+  const keyPointNameExists = await pool.query(
+    `
+    SELECT * FROM business_key_point_names WHERE name = $1 AND type = $2
+    `,
+    [name, type]
+  );
+  if (keyPointNameExists.rows.length > 0) {
+    throw new Error("Business Key Point Name already exists");
+  }
   const result = await pool.query(
     `
     INSERT INTO business_key_point_names (name, type, created_by, updated_by) 
@@ -79,6 +87,39 @@ export const createBusinessKeyPointName = async (
   );
   return result.rows[0].id;
 };
+
+/** --------------------- Verify Business Key Point Owner --------------------- */
+export const verifyBusinessKeyPointOwner = async (
+  userId: number,
+  keyPointId: number
+): Promise<boolean> => {
+  const result = await pool.query(
+    `
+    SELECT * FROM business_key_points WHERE id = $1 AND created_by = $2
+    `,
+    [keyPointId, userId]
+  );
+  if (result.rows.length === 0) {
+    return false;
+  }
+  return true;
+};
+
+export const verifyBusinessKeyPointNameOwner = async (
+  userId: number,
+  keyPointNameId: number
+): Promise<boolean> => {
+  const result = await pool.query(
+    `
+    SELECT * FROM business_key_point_names WHERE id = $1 AND created_by = $2
+    `,
+    [keyPointNameId, userId]
+  );
+  if (result.rows.length === 0) {
+    return false;
+  }
+  return true;
+}
 
 /** --------------------- Find Business Key Points By Business Profile --------------------- */
 export const findBusinessKeyPointsByBusinessProfile = async (
@@ -113,7 +154,9 @@ export const findAllBusinessKeyPointNames = async (): Promise<BusinessKeyPointNa
 };
 
 // ------------filter by type----------------
-export const findAllBusinessKeyPointNamesByType = async (type: string): Promise<BusinessKeyPointName[]> => {
+export const findAllBusinessKeyPointNamesByType = async (
+  type: string
+): Promise<BusinessKeyPointName[]> => {
   const result = await pool.query(
     `
     SELECT * 
