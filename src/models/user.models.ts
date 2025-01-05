@@ -10,6 +10,7 @@ export interface User {
   full_name: string;
   created_at: Date;
   updated_at: Date;
+  stripe_customer_id?: string;
 }
 
 /** Find Stripe Customer by User ID */

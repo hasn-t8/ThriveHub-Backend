@@ -2,43 +2,53 @@ import pool from "../config/db";
 import Stripe from "stripe";
 
 export interface WebhookEvent {
-    id: number;
-    stripe_event_id: string;
-    type: string;
-    payload: object;
-    created_at: Date;
+  id: number;
+  stripe_event_id: string;
+  type: string;
+  payload: object;
+  created_at: Date;
+}
+
+/** --------------------- Record Webhook Event --------------------- */
+export const recordWebhookEvent = async (
+  stripeEventId: string,
+  type: string,
+  payload: object
+): Promise<number> => {
+  const checkDuplicate = await pool.query(
+    `
+      SELECT id FROM webhook_events
+      WHERE stripe_event_id = $1
+      `,
+    [stripeEventId]
+  );
+  if (checkDuplicate.rows.length > 0) {
+    return checkDuplicate.rows[0].id;
   }
-  
-  /** --------------------- Record Webhook Event --------------------- */
-  export const recordWebhookEvent = async (
-    stripeEventId: string,
-    type: string,
-    payload: object
-  ): Promise<number> => {
-    const result = await pool.query(
-      `
+  const result = await pool.query(
+    `
       INSERT INTO webhook_events 
         (stripe_event_id, type, payload) 
       VALUES ($1, $2, $3) 
       RETURNING id
       `,
-      [stripeEventId, type, payload]
-    );
-    return result.rows[0].id;
-  };
-  
-  /** --------------------- Get Webhook Events --------------------- */
-  export const getWebhookEvents = async (limit = 100): Promise<WebhookEvent[]> => {
-    const result = await pool.query(
-      `
+    [stripeEventId, type, payload]
+  );
+  return result.rows[0].id;
+};
+
+/** --------------------- Get Webhook Events --------------------- */
+export const getWebhookEvents = async (limit = 100): Promise<WebhookEvent[]> => {
+  const result = await pool.query(
+    `
       SELECT * FROM webhook_events
       ORDER BY created_at DESC
       LIMIT $1
       `,
-      [limit]
-    );
-    return result.rows;
-  };
+    [limit]
+  );
+  return result.rows;
+};
 
 /** --------------------- Handle Subscription Created --------------------- */
 export const handleSubscriptionCreated = async (
@@ -94,4 +104,3 @@ export const handleSubscriptionDeleted = async (
     [subscriptionId, userId]
   );
 };
-

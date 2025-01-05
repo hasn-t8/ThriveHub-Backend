@@ -8,6 +8,7 @@ import {
   updateSubscription,
 } from "./models/subscriptions.models";
 import { findUserByStripeCustomerId, saveStripeCustomerId } from "./models/user.models";
+import { recordWebhookEvent } from "./models/webhooks-stripe.models";
 
 export async function webHookHandler(event: Stripe.Event): Promise<void> {
   console.log(`Processing event type: ${event.type}`);
@@ -55,12 +56,20 @@ export async function webHookHandler(event: Stripe.Event): Promise<void> {
 }
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  recordWebhookEvent(paymentIntent.id, "payment_intent.succeeded", {
+    paymentIntent,
+    action: "succeeded",
+  });
   console.log("PaymentIntent succeeded!");
   console.log(`PaymentIntent for amount ${paymentIntent.amount} was successful.`);
 }
 
 async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod): Promise<void> {
   console.log("PaymentMethod was attached to a Customer.");
+  recordWebhookEvent(paymentMethod.id, "payment_method.attached", {
+    paymentMethod,
+    action: "attached",
+  });
 }
 
 async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session): Promise<void> {
@@ -71,6 +80,10 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
     console.error("Checkout not found!");
     return;
   }
+  recordWebhookEvent(checkoutSession.id, "checkout.session.completed", {
+    checkoutSession,
+    action: "completed",
+  });
 
   await updateCheckout(checkoutSession.id, {
     session_completed_status: "completed",
@@ -127,6 +140,10 @@ async function handleCheckoutCompleted(checkoutSession: Stripe.Checkout.Session)
 
 async function handleCustomerSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
   console.log("Customer subscription created!");
+  recordWebhookEvent(subscription.id, "customer.subscription.created", {
+    subscription,
+    action: "created",
+  });
   await processSubscription(subscription, "created");
 }
 
@@ -135,9 +152,19 @@ async function handleCustomerSubscriptionUpdated(subscription: Stripe.Subscripti
 
   // Check if the subscription is set to change at the end of the current billing cycle
   if (subscription.pending_update) {
+    recordWebhookEvent(subscription.id, "customer.subscription.updated", {
+      subscription,
+      action: "pending_update",
+    });
     console.log(
       `Subscription ${subscription.id} has a pending update that will take effect at the next billing cycle.`
     );
+  } else {
+    recordWebhookEvent(subscription.id, "customer.subscription.updated", {
+      subscription,
+      action: "updated",
+    });
+    console.log(`Subscription ${subscription.id} has been updated.`);
   }
 
   await processSubscription(subscription, "updated");
@@ -145,12 +172,26 @@ async function handleCustomerSubscriptionUpdated(subscription: Stripe.Subscripti
 
 async function handleCustomerSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
   console.log("Customer subscription deleted!");
-  await canceSubscription(subscription.id);
+  recordWebhookEvent(subscription.id, "customer.subscription.deleted", {
+    subscription,
+    action: "deleted",
+  });
+  if (subscription.cancel_at_period_end) {
+    console.log(
+      `Subscription ${subscription.id} has been cancelled at the end of the current billing cycle.`
+    );
+    if (!subscription.cancel_at) {
+      console.error("Invalid cancel_at timestamp in subscription.");
+      return;
+    }
+    const cancelAt = new Date(subscription.cancel_at * 1000);
+    await canceSubscription(subscription.id, cancelAt);
+  }
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
   console.log("Invoice payment succeeded!");
-
+  recordWebhookEvent(invoice.id, "invoice.payment_succeeded", { invoice, action: "succeeded" });
   if (typeof invoice.subscription !== "string") {
     console.error("Invalid subscription ID in invoice.");
     return;
@@ -228,5 +269,20 @@ async function processSubscription(
         ? new Date(subscription.current_period_end * 1000)
         : null,
     });
+  }
+
+  if (existingSubscription && subscription.cancel_at_period_end) {
+    console.log(
+      `Subscription ${subscription.id} has been cancelled at the end of the current billing cycle.`
+    );
+    if (!subscription.cancel_at) {
+      console.error("Invalid cancel_at timestamp in subscription.");
+      return;
+    }
+    const cancelAt = new Date(subscription.cancel_at * 1000);
+    console.log("cancelAt", cancelAt);
+    console.log("subscription.id", subscription.id);
+
+    await canceSubscription(subscription.id, cancelAt);
   }
 }

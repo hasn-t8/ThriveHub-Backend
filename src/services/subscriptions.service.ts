@@ -167,3 +167,35 @@ export async function retrieveStripeCustomer(customerId: string): Promise<Stripe
     return null;
   }
 }
+
+/**
+ * Cancels a Stripe subscription.
+ * @param subscriptionId - The ID of the subscription to cancel.
+ * @param cancelAtPeriodEnd - If true, cancels the subscription at the end of the billing period. If false, cancels immediately.
+ * @returns The updated subscription object after cancellation.
+ */
+export async function cancelSubscription(
+  subscriptionId: string,
+  cancelAtPeriodEnd: boolean = true
+): Promise<Stripe.Subscription> {
+  try {
+    // Update the subscription to cancel at the end of the billing period or immediately
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: cancelAtPeriodEnd,
+    });
+
+    console.log(
+      `Subscription ${subscriptionId} ${
+        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately"
+      }.`
+    );
+
+    return updatedSubscription;
+  } catch (error) {
+    console.error(
+      `Error canceling subscription ${subscriptionId}:`,
+      error instanceof Error ? error.message : error
+    );
+    throw error;
+  }
+}
