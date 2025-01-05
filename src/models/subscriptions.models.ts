@@ -13,6 +13,34 @@ export interface Subscription {
   updated_at: Date;
 }
 
+/**
+ * Retrieves all active or currently valid subscriptions for a given user.
+ * Includes subscriptions that are canceled but still valid until the end of the current period.
+ * @param userId - The ID of the user.
+ * @returns An array of active subscriptions, or an empty array if none exist.
+ */
+export const getAllActiveSubscriptions = async (userId: number): Promise<Subscription[]> => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT * FROM subscriptions
+      WHERE user_id = $1
+        AND (
+          status = 'active' OR
+          (status = 'canceled' AND end_date > NOW())
+        )
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    return result.rows; // Return all matching subscriptions
+  } catch (error) {
+    console.error("Error retrieving active subscriptions:", error);
+    throw error;
+  }
+};
+
 /** --------------------- Create Subscription --------------------- */
 export const createSubscription = async (
   userId: number,
@@ -21,7 +49,7 @@ export const createSubscription = async (
   status: string,
   startDate: Date,
   nextBillingDate?: Date,
-  endDate?: Date,
+  endDate?: Date
 ): Promise<number> => {
   const result = await pool.query(
     `
@@ -74,19 +102,21 @@ export const deleteSubscription = async (subscriptionId: number): Promise<void> 
   await pool.query(`DELETE FROM subscriptions WHERE id = $1`, [subscriptionId]);
 };
 
-export const canceSubscription = async (subscriptionId: string): Promise<void> => {
+export const canceSubscription = async (subscriptionId: string, cancelAt: Date): Promise<void> => {
   await pool.query(
     `
     UPDATE subscriptions
-    SET status = 'canceled', end_date = NOW()
+    SET status = 'canceled', end_date = $2
     WHERE stripe_subscription_id = $1
     `,
-    [subscriptionId]
+    [subscriptionId, cancelAt]
   );
-}
+};
 
 /** --------------------- Get Subscription By Stripe ID --------------------- */
-export const getSubscriptionByStripeId = async (stripeSubscriptionId: string): Promise<Subscription | null> => {
+export const getSubscriptionByStripeId = async (
+  stripeSubscriptionId: string
+): Promise<Subscription | null> => {
   const result = await pool.query(
     `
     SELECT * FROM subscriptions 
@@ -95,4 +125,4 @@ export const getSubscriptionByStripeId = async (stripeSubscriptionId: string): P
     [stripeSubscriptionId]
   );
   return result.rows[0] || null;
-}
+};
