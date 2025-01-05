@@ -97,8 +97,6 @@ describe("Admin Business Profiles Endpoints", () => {
       .expect(200);
     
     const data = response.body.data;
-    console.log('response.body', data);
-      
 
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThan(1);

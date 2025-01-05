@@ -138,7 +138,6 @@ describe("Likes API Endpoints", () => {
       [testBusinessId, userId, 4]
     );
     const reviewId = reviewResult.rows[0].id;
-    console.log('reviewId', reviewId);
 
     await request(app)
       .post("/api/likes")
@@ -151,8 +150,7 @@ describe("Likes API Endpoints", () => {
       .query({ entityType: "reviews", entityId: reviewId })
       .expect(200);
 
-      console.log('response.body', response.body);
-      
+    // console.log("response.body", response.body);
     expect(response.body).toEqual({
       likeCount: 1,
     });
