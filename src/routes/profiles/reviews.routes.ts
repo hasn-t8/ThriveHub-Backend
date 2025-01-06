@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
+import { verifyToken, verifyAdmin } from "../../middleware/authenticate";
 import { check, validationResult } from "express-validator";
-import { verifyToken } from "../../middleware/authenticate";
+// import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import { getPoliciesForUser } from "../../models/policy.models";
 import {
@@ -10,6 +11,9 @@ import {
   getReviewsForBusiness,
   getReviewsByUserId,
   deleteReview,
+  getReviewById,
+  getAllReviews,
+  getReviewsByApprovalStatus
 } from "../../models/reviews.models";
 import pool from "../../config/db";
 
@@ -30,6 +34,53 @@ const validatePUTReview = [
   check("feedback").isString().withMessage("Feedback must be a string"),
 ];
 
+// Get all reviews
+router.get(
+  "/reviews",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const reviews = await getAllReviews();
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found" });
+        return;
+      }
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching all reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+
+// Get reviews by approval status
+router.get(
+  "/reviews/approval-status/:status",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { status } = req.params;
+
+    // Validate the approval status
+    if (status !== "true" && status !== "false") {
+      res.status(400).json({ error: "Invalid status value. Use 'true' or 'false'." });
+      return;
+    }
+
+    try {
+      const isApproved = status === "true";
+      const reviews = await getReviewsByApprovalStatus(isApproved);
+
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found for the given approval status." });
+        return;
+      }
+
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews by approval status:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 // Get all reviews for a specific business
 router.get(
   "/reviews/business/:businessId",
@@ -141,9 +192,12 @@ router.put(
 );
 
 // Approve a review
+
+// Approve a review
 router.patch(
   "/reviews/:reviewId/approve",
   verifyToken,
+  verifyAdmin, // Ensure only admins can access this route
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
     if (!userId) {
@@ -159,16 +213,7 @@ router.patch(
     }
 
     try {
-      // Check ownership or admin rights (add appropriate logic here if needed)
-      const isOwner = await checkReviewOwnership(reviewId, userId);
-
-      if (!isOwner) {
-        res
-          .status(403)
-          .json({ error: "You are not authorized to approve this review" });
-        return;
-      }
-
+      // Approve the review directly as only admins can reach here
       await pool.query(
         `UPDATE reviews SET approval_status = TRUE WHERE id = $1`,
         [reviewId]
@@ -252,6 +297,32 @@ router.get(
       res.status(200).json(reviews);
     } catch (error) {
       console.error("Error fetching user reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+// Get a review by its ID
+router.get(
+  "/reviews/:reviewId",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const reviewId = parseInt(req.params.reviewId, 10);
+
+    if (isNaN(reviewId)) {
+      res.status(400).json({ error: "Invalid Review ID" });
+      return;
+    }
+
+    try {
+      const review = await getReviewById(reviewId);
+
+      if (!review) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      res.status(200).json(review);
+    } catch (error) {
+      console.error("Error fetching review:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
