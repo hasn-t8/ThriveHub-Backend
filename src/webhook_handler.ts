@@ -215,11 +215,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
   console.log("Subscription payment successfully updated in database.");
 }
 
-async function processSubscription(
+export async function processSubscription(
   subscription: Stripe.Subscription,
   action: string
 ): Promise<void> {
   const customerId = subscription.customer;
+  console.log('customerId', customerId);
+  
   if (typeof customerId !== "string") {
     console.error(`Invalid customer ID in subscription ${action} event.`);
     return;
