@@ -102,7 +102,7 @@ router.get(
 );
 
 router.get(
-  "/subscriptions/active",
+  "/subscriptions-active",
   verifyToken,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;

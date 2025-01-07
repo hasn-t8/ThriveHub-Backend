@@ -2,7 +2,8 @@ import Stripe from "stripe";
 import { saveStripeCustomerId, findStripeCustomerByUserId } from "../models/user.models";
 import { createCheckout } from "../models/checkouts.models";
 import stripe from "../config/stripe";
-import e from "express";
+import { getSubscriptionByStripeId, updateSubscription } from "../models/subscriptions.models";
+// import { processSubscription } from "../webhook_handler";
 
 const websiteUrl =
   process.env.NODE_ENV === "development" ? "http://localhost:5173" : "https://thrivehub.ai";
@@ -186,10 +187,22 @@ export async function cancelSubscription(
 
     console.log(
       `Subscription ${subscriptionId} ${
-        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately"
-      }.`
+        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately."
+      }`
     );
 
+    const sub_id = await getSubscriptionByStripeId(subscriptionId);
+
+    console.log("sub_id", sub_id?.id);
+
+    if (sub_id) {
+      await updateSubscription(sub_id.id, {
+        status: updatedSubscription.status,
+        end_date: updatedSubscription.cancel_at_period_end
+          ? new Date(updatedSubscription.current_period_end * 1000)
+          : new Date(),
+      });
+    }
     return updatedSubscription;
   } catch (error) {
     console.error(
