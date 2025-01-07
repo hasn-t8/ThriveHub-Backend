@@ -62,7 +62,7 @@ services:
       NODE_ENV: ${NODE_ENV}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
+      DB_HOST: dev_postgres
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
     labels:
