@@ -47,56 +47,7 @@ services:
       retries: 5
     networks:
       - th_app_shared_network
-  
-  dev_api_server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: dev_th_api
-    ports:
-      - "8080:3000"
-    depends_on:
-      dev_postgres:
-        condition: service_healthy
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: dev_postgres
-      DB_NAME: ${DB_NAME}
-      DB_PORT: ${DB_PORT}
-    labels:
-      - service=api
-      - domain=th-api.ebsycloud.com
-      - port=3000
-    command: >
-      sh -c "
-      npm run migrate:prod && npm run seed &&
-      node dist/server.js"
-    networks:
-      - dev_th_app_shared_network
-
-  dev_postgres:
-    image: postgres:latest
-    container_name: dev_th_db_pg
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "8432:5432"
-    volumes:
-      - ./docker_data/dev_pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - dev_th_app_shared_network
 
 networks:
   th_app_shared_network:
-    external: true
-  dev_th_app_shared_network:
     external: true
