@@ -2,9 +2,13 @@ import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { findUserByEmail } from "../../models/user.models";
+import {
+  findUserByEmail,
+  
+} from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import { JWT_SECRET, JWT_EXPIRATION } from "../../config/auth";
+import { getBusinessProfilesByUserId } from "../../models/business-profile.models";
 
 const router = Router();
 
@@ -31,7 +35,7 @@ router.post(
     }
 
     const { email, password } = req.body;
-    
+
     try {
       const user = await findUserByEmail(email);
       if (!user) {
@@ -41,18 +45,21 @@ router.post(
       }
 
       if (!user.is_active) {
-        console.log('User is inactive');
-        
+        console.log("User is inactive");
         res.status(403).json({ error: "Forbidden: User is inactive" });
         return;
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        console.log('Invalid credentials');        
+        console.log("Invalid credentials");
         res.status(401).json({ error: "Unauthorized: Invalid credentials" });
         return;
       }
+
+   
+      // Fetch all business profiles for the user
+      const businessProfiles = await getBusinessProfilesByUserId(user.id);
 
       const payload = {
         id: user.id,
@@ -62,20 +69,29 @@ router.post(
         userTypes: user.userTypes,
         city: user.city,
         profileImage: user.profileImage,
+        businessProfiles, // Include all business profiles in the payload
       };
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
-      console.log('Login successful', token);
-      
-      res.status(200).json({ message: "Login successful", token, user: payload });
-      return;
+      console.log("Login successful", { token, businessProfiles });
+
+      // Respond with token and user details
+      res.status(200).json({
+        message: "Login successful",
+        token,
+        user: payload,
+        businessProfiles, // Include in the response
+      });
     } catch (error) {
       console.error("Error during login:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
+
+// export default router;
+
 
 /**
  * @swagger

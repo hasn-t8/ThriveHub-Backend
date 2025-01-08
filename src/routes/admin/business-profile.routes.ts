@@ -1,5 +1,5 @@
 import { Router, Response } from "express";
-import { getAllBusinessProfiles, getTotalBusinessProfilesCount } from "../../models/business-profile.models";
+import { getAllBusinessProfiles, getBusinessProfilesByUserId, getTotalBusinessProfilesCount } from "../../models/business-profile.models";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = Router();
@@ -47,6 +47,40 @@ router.get(
 );
 
 export default router;
+
+
+/**
+ * Route to get business profiles for a specific user
+ */
+router.get(
+  "/user/:userId/businessprofiles",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { userId } = req.params;
+    console.log(`User ID from params: ${userId}`);
+    try {
+      const userIdNumber = parseInt(userId, 10);
+
+      if (isNaN(userIdNumber)) {
+        res.status(400).json({ error: "Invalid user ID" });
+        return;
+      }
+
+      const businessProfiles = await getBusinessProfilesByUserId(userIdNumber);
+
+      if (!businessProfiles) {
+        res.status(404).json({ error: "No business profiles found for the user" });
+        return;
+      }
+
+      res.status(200).json({ data: businessProfiles });
+    } catch (error) {
+      console.error("Error fetching business profiles:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// export default router;
 
 /**
  * @swagger

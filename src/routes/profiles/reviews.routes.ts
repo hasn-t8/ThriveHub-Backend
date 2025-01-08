@@ -1,7 +1,6 @@
-import { Router, Response } from "express";
+import { Router, Request, Response } from "express";
 import { verifyToken, verifyAdmin } from "../../middleware/authenticate";
 import { check, validationResult } from "express-validator";
-// import { verifyToken } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import { getPoliciesForUser } from "../../models/policy.models";
 import {
@@ -13,9 +12,10 @@ import {
   deleteReview,
   getReviewById,
   getAllReviews,
-  getReviewsByApprovalStatus
-} from "../../models/reviews.models";
-import pool from "../../config/db";
+  approveReview,
+  getReviewsByApprovalStatus,
+  getRecentHighestRatedReviews} from "../../models/reviews.models";
+// import pool from "../../config/db";
 
 const router = Router();
 
@@ -38,19 +38,34 @@ const validatePUTReview = [
 router.get(
   "/reviews",
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const reviews = await getAllReviews();
-      if (!reviews || reviews.length === 0) {
-        res.status(404).json({ error: "No reviews found" });
-        return;
-      }
-      res.status(200).json(reviews);
-    } catch (error) {
-      console.error("Error fetching all reviews:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+  try {
+    const reviews = await getAllReviews();
+    if (!reviews || reviews.length === 0) {
+      res.status(404).json({ error: "No reviews found" });
+      return;
     }
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching all reviews:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-);
+});
+
+// Get recent highest-rated reviews
+router.get("/reviews/highest-rated", async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10; // Default limit to 10 if not provided
+    const reviews = await getRecentHighestRatedReviews(limit);
+    if (!reviews || reviews.length === 0) {
+      res.status(404).json({ error: "No highest-rated reviews found" });
+      return;
+    }
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching highest-rated reviews:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 
 // Get reviews by approval status
@@ -177,9 +192,18 @@ router.put(
         return;
       }
 
-      // Proceed to update the review
-      await updateReview(reviewId, userId, rating, feedback);
-      res.status(200).json({ message: "Review updated successfully" });
+      // Proceed to update the review and set approval_status to "false"
+      const updatedReview = await updateReview(reviewId, userId, rating, feedback, "false");
+
+      if (!updatedReview) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Review updated successfully",
+        review: updatedReview,
+      });
     } catch (error) {
       if (error instanceof Error && error.message === "Review not found") {
         res.status(404).json({ error: "Review not found" });
@@ -191,8 +215,8 @@ router.put(
   }
 );
 
-// Approve a review
 
+// Approve a review
 // Approve a review
 router.patch(
   "/reviews/:reviewId/approve",
@@ -200,6 +224,7 @@ router.patch(
   verifyAdmin, // Ensure only admins can access this route
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
+
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -213,19 +238,25 @@ router.patch(
     }
 
     try {
-      // Approve the review directly as only admins can reach here
-      await pool.query(
-        `UPDATE reviews SET approval_status = TRUE WHERE id = $1`,
-        [reviewId]
-      );
+      // Delegate the logic to the model function
+      const approvedReview = await approveReview(reviewId);
 
-      res.status(200).json({ message: "Review approved successfully" });
+      if (!approvedReview) {
+        res.status(404).json({ error: "Review not found" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Review approved successfully",
+        review: approvedReview,
+      });
     } catch (error) {
       console.error("Error approving review:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
 );
+
 
 // Delete a review
 router.delete(
@@ -301,6 +332,8 @@ router.get(
     }
   }
 );
+
+
 // Get a review by its ID
 router.get(
   "/reviews/:reviewId",
