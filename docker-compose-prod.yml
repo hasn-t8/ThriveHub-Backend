@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: th_api
     ports:
       - "3000:3000"
     depends_on:
@@ -19,7 +20,7 @@ services:
       DB_PORT: ${DB_PORT}
     labels:
       - service=api
-      - domain=th-api.ebsycloud.com
+      - domain=thrivehub.ai
       - port=3000
     command: >
       sh -c "
@@ -30,7 +31,7 @@ services:
 
   postgres:
     image: postgres:latest
-    container_name: my-postgres-db
+    container_name: th_db_pg
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}

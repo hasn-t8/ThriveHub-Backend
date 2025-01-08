@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  api_server:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      ports:
+        - "3000:3000"
+      container_name: th_dev_api_server
+      depends_on:
+        dev_postgres:
+          condition: service_healthy
+      environment:
+        NODE_ENV: development
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_HOST: dev_postgres
+        DB_NAME: ${DB_NAME}
+        DB_PORT: 5432
+      labels:
+        - service=api
+        - domain=thrivehub.ai
+        - port=3000
+      command: >
+        sh -c "
+        npm run migrate:up && npm run seed &&
+        node dist/server.js"
+      networks:
+        - th_app_shared_network
+
+  dev_api_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:3000"
+    container_name: th_dev_api_server_2
+    depends_on:
+      dev_postgres_1:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DB_USER: dev_admin_abc
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: dev_postgres_1
+      DB_NAME: dev_thrive_hub_db
+      DB_PORT: 5432
+    labels:
+      - service=api
+      - domain=thrivehub.ai
+      - port=3000
+    command: >
+      sh -c "
+      npm run migrate:up && npm run seed &&
+      node dist/server.js"
+    networks:
+      - dev_th_app_shared_network
+
+  dev_postgres:
+    image: postgres:latest
+    container_name: th_dev_db_pg
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "7432:5432"
+    volumes:
+      - ./docker_data/dev_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - th_app_shared_network
+
+  dev_postgres_1:
+    image: postgres:latest
+    container_name: pg_2
+    environment:
+      POSTGRES_USER: dev_admin_abc
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: dev_thrive_hub_db
+    ports:
+      - "6432:5432"
+    volumes:
+      - ./docker_data/pg_data_31:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U your_user -h localhost || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev_th_app_shared_network
+
+networks:
+  th_app_shared_network:
+    external: true
+  dev_th_app_shared_network:
+    external: true
