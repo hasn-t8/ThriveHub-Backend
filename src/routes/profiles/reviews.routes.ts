@@ -14,7 +14,8 @@ import {
   getAllReviews,
   approveReview,
   getReviewsByApprovalStatus,
-  getRecentHighestRatedReviews} from "../../models/reviews.models";
+  getRecentHighestRatedReviews,
+  searchReviews} from "../../models/reviews.models";
 // import pool from "../../config/db";
 
 const router = Router();
@@ -67,6 +68,33 @@ router.get("/reviews/highest-rated", async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+// Search reviews by a query
+router.get(
+  "/reviews/search",
+  async (req: Request, res: Response): Promise<void> => {
+    const query = req.query.query as string;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    if (!query || query.trim() === "") {
+      res.status(400).json({ error: "Query parameter is required" });
+      return;
+    }
+
+    try {
+      const reviews = await searchReviews(query, limit);
+
+      if (!reviews || reviews.length === 0) {
+        res.status(404).json({ error: "No reviews found for the given query" });
+        return;
+      }
+
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error searching reviews:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 // Get reviews by approval status
 router.get(

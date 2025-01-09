@@ -11,6 +11,29 @@ export interface Review {
   customer_name: string;
   approval_status: boolean;
 }
+/**
+ * Search reviews by a query string.
+ * @param query The search query
+ * @param limit The number of results to return (optional)
+ * @returns A list of reviews matching the query
+ */
+export const searchReviews = async (query: string, limit: number = 10): Promise<Review[]> => {
+  const result = await pool.query(
+    `
+    SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
+    FROM reviews
+    WHERE 
+      feedback ILIKE $1 OR
+      customer_name ILIKE $1 OR
+      business_id IN (SELECT id FROM profiles_business WHERE org_name ILIKE $1)
+    ORDER BY created_at DESC
+    LIMIT $2
+    `,
+    [`%${query}%`, limit]
+  );
+
+  return result.rows;
+};
 
 /**
  * Update the total likes for a review.
