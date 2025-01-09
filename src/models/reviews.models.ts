@@ -86,6 +86,31 @@ export const updateBusinessRatings = async (businessId: number): Promise<void> =
   );
 };
 
+
+/**
+ * Approve a review by ID.
+ * @param reviewId The review ID
+ * @returns The approved review or null if not found
+ */
+export const approveReview = async (reviewId: number): Promise<Review | null> => {
+  const result = await pool.query(
+    `
+    UPDATE reviews 
+    SET approval_status = TRUE, updated_at = NOW()
+    WHERE id = $1
+    RETURNING id, business_id, user_id, rating, feedback, approval_status, created_at, updated_at
+    `,
+    [reviewId]
+  );
+
+  if (result.rowCount === 0) {
+    return null; // No review found with the given ID
+  }
+
+  return result.rows[0]; // Return the approved review
+};
+
+
 /**
  * Update an existing review.
  * @param reviewId The review ID
@@ -94,12 +119,9 @@ export const updateBusinessRatings = async (businessId: number): Promise<void> =
  * @param feedback The new feedback text
  * @returns The updated review
  */
+
 export const updateReview = async (
-  reviewId: number,
-  userId: number,
-  rating?: number,
-  feedback?: string
-): Promise<Review | null> => {
+reviewId: number, userId: number, rating?: number, feedback?: string, p0?: string): Promise<Review | null> => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -116,13 +138,14 @@ export const updateReview = async (
 
     const businessId = reviewResult.rows[0].business_id;
 
-    // Update the review
-    const updatedReview = await client.query(
+    // Update the review and set approval_status to "false"
+    const updatedReviewResult = await client.query(
       `
       UPDATE reviews
       SET 
         rating = COALESCE($1, rating),
         feedback = COALESCE($2, feedback),
+        approval_status = 'false', -- Set approval_status to pending
         updated_at = NOW()
       WHERE id = $3
       RETURNING id, business_id, user_id, rating, feedback, customer_name, created_at, updated_at, approval_status
@@ -130,19 +153,39 @@ export const updateReview = async (
       [rating, feedback, reviewId]
     );
 
-    // Update the business ratings
-    await updateBusinessRatings(businessId);
+    const updatedReview = updatedReviewResult.rows[0];
 
     await client.query("COMMIT");
-
-    return updatedReview.rows[0];
+    return updatedReview;
   } catch (error) {
     await client.query("ROLLBACK");
+    console.error("Error updating review:", error);
     throw error;
   } finally {
     client.release();
   }
 };
+
+
+/**
+ * Get all recent reviews with the highest rating.
+ * @param {number} [limit=10] - The maximum number of reviews to retrieve (optional).
+ * @returns A list of recent reviews with the highest rating.
+ */
+export const getRecentHighestRatedReviews = async (limit = 10): Promise<Review[]> => {
+  const result = await pool.query(
+    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
+     FROM reviews
+     WHERE rating = (SELECT MAX(rating) FROM reviews)
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit]
+  );
+
+  return result.rows;
+};
+
+
 /**
  * Get all reviews in the system.
  * @returns A list of all reviews
