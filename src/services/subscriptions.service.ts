@@ -187,19 +187,19 @@ export async function cancelSubscription(
 
     console.log(
       `Subscription ${subscriptionId} ${
-        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately."
+        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately. <><><>"
       }`
     );
 
-    const sub_id = await getSubscriptionByStripeId(subscriptionId);
+    const thisSubscription = await getSubscriptionByStripeId(subscriptionId);
 
-    console.log("sub_id", sub_id?.id);
+    console.log("sub_id", thisSubscription?.id);
 
-    if (sub_id) {
-      await updateSubscription(sub_id.id, {
+    if (thisSubscription) {
+      await updateSubscription(thisSubscription.id, {
         status: updatedSubscription.status,
         end_date: updatedSubscription.cancel_at_period_end
-          ? new Date(updatedSubscription.current_period_end * 1000)
+          ? thisSubscription.next_billing_date
           : new Date(),
       });
     }
