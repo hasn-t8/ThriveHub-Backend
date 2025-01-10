@@ -25,10 +25,7 @@ export const getAllActiveSubscriptions = async (userId: number): Promise<Subscri
       `
       SELECT * FROM subscriptions
       WHERE user_id = $1
-        AND (
-          status = 'active' OR
-          (status = 'canceled' AND end_date > NOW())
-        )
+        AND end_date > NOW()::TIMESTAMP -- Ensure the end date is in the future
       ORDER BY created_at DESC
       `,
       [userId]
