@@ -90,9 +90,6 @@ router.post(
   }
 );
 
-// export default router;
-
-
 /**
  * @swagger
  * tags:
