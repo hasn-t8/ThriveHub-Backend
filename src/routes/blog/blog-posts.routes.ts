@@ -182,13 +182,15 @@ router.delete(
 );
 
 export default router;
-
 /**
  * @swagger
  * tags:
  *   name: Blog Posts
  *   description: API endpoints for managing blog posts
- *
+ */
+
+/**
+ * @swagger
  * /posts:
  *   get:
  *     summary: Get all blog posts or filter by category
@@ -227,6 +229,12 @@ export default router;
  *                   is_published:
  *                     type: boolean
  *                     description: Whether the post is published
+ *                   image_cover:
+ *                     type: string
+ *                     description: URL of the cover image
+ *                   image_thumbnail:
+ *                     type: string
+ *                     description: URL of the thumbnail image
  *                   created_at:
  *                     type: string
  *                     format: date-time
@@ -237,25 +245,26 @@ export default router;
  *                     description: The last update date of the post
  *       500:
  *         description: Internal server error
- *
+ */
+
+/**
+ * @swagger
+ * /posts:
  *   post:
  *     summary: Create a new blog post
  *     tags: [Blog Posts]
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - author_id
  *               - category_id
  *               - title
  *               - content
+ *               - is_published
  *             properties:
- *               author_id:
- *                 type: integer
- *                 description: The ID of the author
  *               category_id:
  *                 type: integer
  *                 description: The ID of the category
@@ -268,8 +277,15 @@ export default router;
  *               is_published:
  *                 type: boolean
  *                 description: Whether the post should be published
+ *               image_cover:
+ *                 type: string
+ *                 format: binary
+ *                 description: Cover image for the blog post
+ *               image_thumbnail:
+ *                 type: string
+ *                 format: binary
+ *                 description: Thumbnail image for the blog post
  *             example:
- *               author_id: 1
  *               category_id: 2
  *               title: "My First Blog Post"
  *               content: "This is the content of my first blog post."
@@ -285,9 +301,18 @@ export default router;
  *                 id:
  *                   type: integer
  *                   description: The ID of the created blog post
+ *                 image_cover:
+ *                   type: string
+ *                   description: URL of the uploaded cover image
+ *                 image_thumbnail:
+ *                   type: string
+ *                   description: URL of the uploaded thumbnail image
  *       500:
  *         description: Internal server error
- *
+ */
+
+/**
+ * @swagger
  * /posts/{id}:
  *   put:
  *     summary: Update an existing blog post
@@ -302,7 +327,7 @@ export default router;
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -318,6 +343,14 @@ export default router;
  *               category_id:
  *                 type: integer
  *                 description: The new category ID of the blog post
+ *               image_cover:
+ *                 type: string
+ *                 format: binary
+ *                 description: New cover image for the blog post
+ *               image_thumbnail:
+ *                 type: string
+ *                 format: binary
+ *                 description: New thumbnail image for the blog post
  *             example:
  *               title: "Updated Blog Post Title"
  *               content: "This is the updated content of the blog post."
@@ -346,11 +379,21 @@ export default router;
  *                 category_id:
  *                   type: integer
  *                   description: The category ID of the blog post
+ *                 image_cover:
+ *                   type: string
+ *                   description: URL of the cover image
+ *                 image_thumbnail:
+ *                   type: string
+ *                   description: URL of the thumbnail image
  *       404:
  *         description: Blog post not found
  *       500:
  *         description: Internal server error
- *
+ */
+
+/**
+ * @swagger
+ * /posts/{id}:
  *   delete:
  *     summary: Delete a blog post
  *     tags: [Blog Posts]
