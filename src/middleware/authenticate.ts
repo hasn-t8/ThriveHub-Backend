@@ -139,9 +139,13 @@ export const verifyToken = async (
     const { id, email, tokenVersion } = decoded;
 
     // console.log('token', token, email, tokenVersion);
-    const result = await pool.query("SELECT token_version FROM users WHERE id = $1", [id]);
+    const result = await pool.query(
+      "SELECT token_version FROM users WHERE id = $1 AND email = $2",
+      [id, email]
+    );
+
     if (result.rowCount === 0 || result.rows[0].token_version !== tokenVersion) {
-      res.status(401).json({ error: "Unauthorized: Invalid token" });
+      res.status(401).json({ error: "Unauthorized: Invalid tokens" });
       return;
     }
 
@@ -149,7 +153,6 @@ export const verifyToken = async (
     next();
   } catch (error) {
     console.log("verifyToken: ", error);
-
     res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
 };

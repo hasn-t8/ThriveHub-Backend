@@ -7,6 +7,8 @@ export interface BlogPost {
   title: string;
   content: string;
   is_published: boolean;
+  image_cover: string | null;
+  image_thumbnail: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -19,14 +21,36 @@ export const createBlogPost = async (
   categoryId: number | null,
   title: string,
   content: string,
-  isPublished: boolean
+  isPublished: boolean,
+  imageCover: string | null = null,
+  imageThumbnail: string | null = null
 ): Promise<number> => {
   const result = await pool.query(
-    `INSERT INTO blog_posts (author_id, category_id, title, content, is_published)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [authorId, categoryId, title, content, isPublished]
+    `INSERT INTO blog_posts (author_id, category_id, title, content, is_published, image_cover, image_thumbnail)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [authorId, categoryId, title, content, isPublished, imageCover, imageThumbnail]
   );
-  return result.rows[0].id;
+  return result.rows[0];
+};
+
+/**
+ * Get all blog posts by a specific author
+ */
+export const getBlogByAuthorId = async (authorId: number): Promise<BlogPost[]> => {
+  try {
+    const result = await pool.query(
+      `SELECT *
+       FROM blog_posts
+       WHERE author_id = $1
+       ORDER BY created_at DESC`,
+      [authorId]
+    );
+
+    return result.rows as BlogPost[];
+  } catch (error) {
+    console.error("Error fetching blogs by author ID:", error);
+    throw new Error("Failed to fetch blogs by author ID");
+  }
 };
 
 /**
@@ -63,7 +87,9 @@ export const updateBlogPost = async (
   title?: string,
   content?: string,
   isPublished?: boolean,
-  categoryId?: number | null
+  categoryId?: number | null,
+  imageCover?: string | null,
+  imageThumbnail?: string | null
 ): Promise<BlogPost | null> => {
   const result = await pool.query(
     `UPDATE blog_posts
@@ -72,12 +98,14 @@ export const updateBlogPost = async (
        content = COALESCE($2, content),
        is_published = COALESCE($3, is_published),
        category_id = COALESCE($4, category_id),
+       image_cover = COALESCE($5, image_cover),
+       image_thumbnail = COALESCE($6, image_thumbnail),
        updated_at = NOW()
-     WHERE id = $5
-     RETURNING id, author_id, category_id, title, content, is_published, created_at, updated_at`,
-    [title, content, isPublished, categoryId, id]
+     WHERE id = $7
+     RETURNING *`,
+    [title, content, isPublished, categoryId, imageCover, imageThumbnail, id]
   );
-  return result.rowCount && result.rowCount > 0 ? result.rows[0] : null;
+  return result.rows[0];
 };
 
 /**

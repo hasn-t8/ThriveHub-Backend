@@ -2,10 +2,7 @@ import { Router, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {
-  findUserByEmail,
-  
-} from "../../models/user.models";
+import { findUserByEmail } from "../../models/user.models";
 import { check, validationResult } from "express-validator";
 import { JWT_SECRET, JWT_EXPIRATION } from "../../config/auth";
 import { getBusinessProfilesByUserId } from "../../models/business-profile.models";
@@ -57,7 +54,6 @@ router.post(
         return;
       }
 
-   
       // Fetch all business profiles for the user
       const businessProfiles = await getBusinessProfilesByUserId(user.id);
 
@@ -69,7 +65,6 @@ router.post(
         userTypes: user.userTypes,
         city: user.city,
         profileImage: user.profileImage,
-        businessProfiles, // Include all business profiles in the payload
       };
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
@@ -81,7 +76,7 @@ router.post(
         message: "Login successful",
         token,
         user: payload,
-        businessProfiles, // Include in the response
+        businessProfiles,
       });
     } catch (error) {
       console.error("Error during login:", error);
