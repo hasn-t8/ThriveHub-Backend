@@ -5,7 +5,14 @@ import {
   getBlogPostsByCategory,
   updateBlogPost,
   deleteBlogPost,
+  getBlogByAuthorId,
 } from "../../models/blog-post.models";
+import multer from "multer";
+
+const upload = multer();
+import { uploadToS3 } from "../../helpers/s3Helper";
+import { verifyAdmin, verifyToken } from "../../middleware/authenticate";
+import { AuthenticatedRequest } from "../../types/authenticated-request";
 
 const router = express.Router();
 
@@ -28,54 +35,151 @@ router.get("/posts", async (req: Request, res: Response): Promise<void> => {
 });
 
 // Create a new post
-router.post("/posts", async (req: Request, res: Response): Promise<void> => {
-  const { author_id, category_id, title, content, is_published } = req.body;
+router.post(
+  "/posts",
+  verifyToken,
+  upload.fields([
+    { name: "image_cover", maxCount: 1 },
+    { name: "image_thumbnail", maxCount: 1 },
+  ]),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return;
+      }
+      const userId = user.id as number;
 
-  try {
-    const postId = await createBlogPost(author_id, category_id, title, content, is_published);
-    res.status(201).json({ id: postId });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message });
+      const { category_id, title, content, is_published } = req.body;
+
+      const uploadedFiles: { image_cover?: string; image_thumbnail?: string } = {};
+
+      // Upload files using helper
+      for (const [key, files] of Object.entries(req.files || {})) {
+        const file = files[0]; // Multer returns an array of files for each field
+        uploadedFiles[key as keyof typeof uploadedFiles] = await uploadToS3({
+          folder: key === "image_cover" ? "blog_posts/image_covers" : "blog_posts/image_thumbnails",
+          file,
+        });
+      }
+
+      // Create blog post
+      const post = await createBlogPost(
+        userId,
+        Number(category_id),
+        title,
+        content,
+        is_published,
+        uploadedFiles.image_cover || null,
+        uploadedFiles.image_thumbnail || null
+      );
+
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ error: (error as any)?.message || "Failed to create post" });
+    }
   }
-});
+);
 
 // Update an existing post
-router.put("/posts/:id", async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-  const { title, content, is_published, category_id } = req.body;
+router.put(
+  "/posts/:id",
+  verifyToken,
+  verifyAdmin,
+  upload.fields([
+    { name: "image_cover", maxCount: 1 },
+    { name: "image_thumbnail", maxCount: 1 },
+  ]),
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ error: "Unauthorized: No token provided" });
+        return;
+      }
+      const userType = req.user?.type;
 
-  try {
-    const updatedPost = await updateBlogPost(Number(id), title, content, is_published, category_id);
+      const blogByAuthor = await getBlogByAuthorId(user.id as number);
 
-    if (!updatedPost) {
-      res.status(404).json({ error: "Post not found" });
-      return;
+      if (!blogByAuthor && userType !== "admin") {
+        res.status(404).json({ error: "Post not found or not authorized." });
+        return;
+      }
+
+      const { id } = req.params;
+      const { title, content, is_published, category_id } = req.body;
+
+      const uploadedFiles: { image_cover?: string; image_thumbnail?: string } = {};
+
+      // Upload files using helper
+      for (const [key, files] of Object.entries(req.files || {})) {
+        const file = files[0];
+        uploadedFiles[key as keyof typeof uploadedFiles] = await uploadToS3({
+          folder: key === "image_cover" ? "blog_posts/image_covers" : "blog_posts/image_thumbnails",
+          file,
+        });
+      }
+
+      // Update blog post
+      const updatedPost = await updateBlogPost(
+        Number(id),
+        title,
+        content,
+        is_published,
+        category_id,
+        uploadedFiles.image_cover,
+        uploadedFiles.image_thumbnail
+      );
+
+      if (!updatedPost) {
+        res.status(404).json({ error: "Post not found" });
+        return;
+      }
+
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({ error: (error as any)?.message || "Failed to update post" });
     }
-
-    res.json(updatedPost);
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ error: err.message });
   }
-});
+);
 
 // Delete a post
-router.delete("/posts/:id", async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-
-  try {
-    await deleteBlogPost(Number(id));
-    res.json({ message: "Post deleted successfully" });
-  } catch (error) {
-    const err = error as Error;
-    if (err.message === "Blog post not found") {
-      res.status(404).json({ error: err.message });
+router.delete(
+  "/posts/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: "Unauthorized: No token provided" });
       return;
     }
-    res.status(500).json({ error: err.message });
+    const userType = req.user?.type;
+
+    const blogByAuthor = await getBlogByAuthorId(user.id as number);
+
+    if (!blogByAuthor && userType !== "admin") {
+      res.status(404).json({ error: "Post not found or not authorized." });
+      return;
+    }
+
+    const { id } = req.params;
+
+    try {
+      await deleteBlogPost(Number(id));
+      res.json({ message: "Post deleted successfully" });
+    } catch (error) {
+      const err = error as Error;
+      if (err.message === "Blog post not found") {
+        res.status(404).json({ error: err.message });
+        return;
+      }
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
 export default router;
 
