@@ -144,8 +144,8 @@ router.post(
     }
 
     try {
-      const sessionUrl = await createOrSwitchSubscription(userId, userEmail, plan);
-      res.status(200).json({ url: sessionUrl });
+      const result = await createOrSwitchSubscription(userId, userEmail, plan);
+      res.status(200).json(result);
     } catch (error) {
       if (error instanceof Error) {
         console.error("Error updating subscription:", error.message);

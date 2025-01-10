@@ -17,7 +17,7 @@ export const createOrSwitchSubscription = async (
   userId: number,
   userEmail: string,
   plan: string
-): Promise<string> => {
+): Promise<object> => {
   const planId = getPlan(plan);
 
   // Retrieve or create Stripe customer
@@ -87,7 +87,7 @@ export const createOrSwitchSubscription = async (
     // Record the subscription creation
     await createCheckout(userId, plan, planId, newSubscription.id, "pending", "none", {});
 
-    return `Subscription switched successfully. Subscription ID: ${newSubscription.id}`;
+    return { data: `Subscription switched successfully. Subscription ID: ${newSubscription.id}` };
   }
 
   // If no default payment method, fallback to Checkout session
@@ -110,7 +110,7 @@ export const createOrSwitchSubscription = async (
   if (!session.url) {
     throw new Error("Failed to create checkout session.");
   }
-  return session.url;
+  return { url: session.url };
 };
 
 /**
@@ -187,7 +187,9 @@ export async function cancelSubscription(
 
     console.log(
       `Subscription ${subscriptionId} ${
-        cancelAtPeriodEnd ? "scheduled for cancellation at period end" : "canceled immediately. <><><>"
+        cancelAtPeriodEnd
+          ? "scheduled for cancellation at period end"
+          : "canceled immediately. <><><>"
       }`
     );
 
