@@ -24,7 +24,7 @@ import likes from './profiles/tc-likes.routes';
 import blogPosts from './blog/blog-posts.routes';
 import blogCategories from './blog/categories.routes';
 import imageUpload from './blog/image-uploads.routes';
-
+import ReviewReply from './profiles/reply-reviews.routes';
 import subsciptions from './subscriptions.routes';
 
 
@@ -59,7 +59,7 @@ router.use(likes);
 router.use(blogPosts);
 router.use(blogCategories);
 router.use(imageUpload);
-
+router.use(ReviewReply);
 router.use(subsciptions);
 
 
