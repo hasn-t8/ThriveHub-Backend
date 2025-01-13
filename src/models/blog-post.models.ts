@@ -58,9 +58,12 @@ export const getBlogByAuthorId = async (authorId: number): Promise<BlogPost[]> =
  */
 export const getAllBlogPosts = async (): Promise<BlogPost[]> => {
   const result = await pool.query(
-    `SELECT id, author_id, category_id, title, content, is_published, created_at, updated_at
-     FROM blog_posts
-     ORDER BY created_at DESC`
+    `SELECT 
+       bp.*, 
+       c.name AS category_name
+     FROM blog_posts bp
+     LEFT JOIN categories c ON bp.category_id = c.id
+     ORDER BY bp.created_at DESC`
   );
   return result.rows;
 };
@@ -70,10 +73,13 @@ export const getAllBlogPosts = async (): Promise<BlogPost[]> => {
  */
 export const getBlogPostsByCategory = async (categoryId: number): Promise<BlogPost[]> => {
   const result = await pool.query(
-    `SELECT id, author_id, category_id, title, content, is_published, created_at, updated_at
-     FROM blog_posts
-     WHERE category_id = $1
-     ORDER BY created_at DESC`,
+    `SELECT 
+    bp.*, 
+    c.name AS category_name
+    FROM blog_posts bp
+    LEFT JOIN categories c ON bp.category_id = c.id
+    WHERE bp.category_id = $1
+    ORDER BY bp.created_at DESC`,
     [categoryId]
   );
   return result.rows;
