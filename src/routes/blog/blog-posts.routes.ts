@@ -22,6 +22,7 @@ router.get("/posts", async (req: Request, res: Response): Promise<void> => {
 
   try {
     if (category_id) {
+      
       const posts = await getBlogPostsByCategory(Number(category_id));
       res.json(posts);
     } else {
