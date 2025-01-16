@@ -373,11 +373,10 @@ export const getReviewsForBusiness = async (businessId: number): Promise<Review[
     const result = await pool.query(
       `
       SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
-             r.customer_name, r.approval_status, pp.address_city,
+             r.customer_name, r.approval_status, pp.address_city
       FROM reviews r
       LEFT JOIN users u ON r.user_id = u.id
-      LEFT JOIN profiles p ON p.user_id = u.id pb.org_name
-    LEFT JOIN profiles_business pb ON r.business_id = pb.id
+      LEFT JOIN profiles p ON p.user_id = u.id
       LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
       WHERE r.business_id = $1
       ORDER BY r.created_at DESC
