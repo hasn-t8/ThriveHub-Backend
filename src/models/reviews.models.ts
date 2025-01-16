@@ -10,30 +10,9 @@ export interface Review {
   updated_at: Date;
   customer_name: string;
   approval_status: boolean;
+  // location: string; // Added location
 }
-/**
- * Search reviews by a query string.
- * @param query The search query
- * @param limit The number of results to return (optional)
- * @returns A list of reviews matching the query
- */
-export const searchReviews = async (query: string, limit: number = 10): Promise<Review[]> => {
-  const result = await pool.query(
-    `
-    SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-    FROM reviews
-    WHERE 
-      feedback ILIKE $1 OR
-      customer_name ILIKE $1 OR
-      business_id IN (SELECT id FROM profiles_business WHERE org_name ILIKE $1)
-    ORDER BY created_at DESC
-    LIMIT $2
-    `,
-    [`%${query}%`, limit]
-  );
 
-  return result.rows;
-};
 
 /**
  * Update the total likes for a review.
@@ -208,57 +187,26 @@ export const getRecentHighestRatedReviews = async (limit = 10): Promise<Review[]
   return result.rows;
 };
 
-
 /**
- * Get all reviews in the system.
+ * Get all reviews in the system, including the user's location.
  * @returns A list of all reviews
  */
 export const getAllReviews = async (): Promise<Review[]> => {
   const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     ORDER BY created_at DESC`
+    `
+    SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+           r.customer_name, r.approval_status, pp.address_city
+    FROM reviews r
+    LEFT JOIN users u ON r.user_id = u.id
+    LEFT JOIN profiles p ON p.user_id = u.id
+    LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+    ORDER BY r.created_at DESC
+    `
   );
 
   return result.rows;
 };
 
-/**
- * Get all reviews for a specific business.
- * @param businessId The business ID
- * @returns A list of reviews
- */
-export const getReviewsForBusiness = async (businessId: number): Promise<Review[]> => {
-  const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     WHERE business_id = $1
-     ORDER BY created_at DESC`,
-    [businessId]
-  );
-
-  return result.rows;
-};
-
-
-/**
- * Get reviews by their approval status.
- * @param approvalStatus The approval status (true for approved, false for pending/denied).
- * @returns A list of reviews matching the specified approval status
- */
-export const getReviewsByApprovalStatus = async (
-  approvalStatus: boolean
-): Promise<Review[]> => {
-  const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     WHERE approval_status = $1
-     ORDER BY created_at DESC`,
-    [approvalStatus]
-  );
-
-  return result.rows;
-};
 
 /**
  * Check if the user is the owner of the review.
@@ -309,41 +257,153 @@ export const deleteReview = async (reviewId: number): Promise<void> => {
   }
 };
 
+
 /**
- * Get all reviews left by a specific user.
+ * Get reviews by their approval status, including the user's location.
+ * @param approvalStatus The approval status (true for approved, false for pending/denied).
+ * @returns A list of reviews matching the specified approval status
+ */
+export const getReviewsByApprovalStatus = async (
+  approvalStatus: boolean
+): Promise<Review[]> => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+             r.customer_name, r.approval_status, pp.address_city
+      FROM reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+      WHERE r.approval_status = $1
+      ORDER BY r.created_at DESC
+      `,
+      [approvalStatus] // Ensure this parameter is correctly passed
+    );
+
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching reviews by approval status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all reviews left by a specific user, including the user's location.
  * @param userId The user ID
  * @returns A list of reviews
  */
 export const getReviewsByUserId = async (userId: number): Promise<Review[]> => {
-  const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [userId]
-  );
+  try {
+    const result = await pool.query(
+      `
+      SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+             r.customer_name, r.approval_status, pp.address_city
+      FROM reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+      WHERE r.user_id = $1
+      ORDER BY r.created_at DESC
+      `,
+      [userId]
+    );
 
-  return result.rows;
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching reviews by user ID:", error);
+    throw error;
+  }
 };
 
-
-
 /**
- * Get a review by its ID.
+ * Get a review by its ID, including the user's location.
  * @param reviewId The review ID
  * @returns The review details or null if not found
  */
 export const getReviewById = async (reviewId: number): Promise<Review | null> => {
-  const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     WHERE id = $1`,
-    [reviewId]
-  );
+  try {
+    const result = await pool.query(
+      `
+      SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+             r.customer_name, r.approval_status, pp.address_city
+      FROM reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+      WHERE r.id = $1
+      `,
+      [reviewId]
+    );
 
-  if (result.rowCount === 0) {
-    return null; // Return null if review not found
+    if (result.rowCount === 0) {
+      return null; // Return null if review not found
+    }
+
+    return result.rows[0]; // Return the review details
+  } catch (error) {
+    console.error("Error fetching review by ID:", error);
+    throw error;
   }
+};
 
-  return result.rows[0]; // Return the review details
+/**
+ * Get all reviews for a specific business, including the user's location.
+ * @param businessId The business ID
+ * @returns A list of reviews
+ */
+export const getReviewsForBusiness = async (businessId: number): Promise<Review[]> => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+             r.customer_name, r.approval_status, pp.address_city
+      FROM reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+      WHERE r.business_id = $1
+      ORDER BY r.created_at DESC
+      `,
+      [businessId]
+    );
+
+    return result.rows;
+  } catch (error) {
+    console.error("Error fetching reviews for business:", error);
+    throw error;
+  }
+};
+
+/**
+ * Search reviews by a query string, including the user's location.
+ * @param query The search query
+ * @param limit The number of results to return (optional)
+ * @returns A list of reviews matching the query
+ */
+export const searchReviews = async (query: string, limit: number = 10): Promise<Review[]> => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT r.id, r.business_id, r.user_id, r.rating, r.feedback, r.created_at, r.updated_at, 
+             r.customer_name, r.approval_status, pp.address_city
+      FROM reviews r
+      LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN profiles_personal pp ON p.id = pp.profile_id
+      WHERE 
+        r.feedback ILIKE $1 OR
+        r.customer_name ILIKE $1 OR
+        r.business_id IN (SELECT id FROM profiles_business WHERE org_name ILIKE $1)
+      ORDER BY r.created_at DESC
+      LIMIT $2
+      `,
+      [`%${query}%`, limit]
+    );
+
+    return result.rows;
+  } catch (error) {
+    console.error("Error searching reviews:", error);
+    throw error;
+  }
 };
