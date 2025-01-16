@@ -170,23 +170,35 @@ reviewId: number, userId: number, rating?: number, feedback?: string, p0?: strin
 
 
 /**
- * Get all recent reviews with the highest rating.
+ * Get all recent reviews with the highest rating, including the organization name.
  * @param {number} [limit=10] - The maximum number of reviews to retrieve (optional).
  * @returns A list of recent reviews with the highest rating.
  */
 export const getRecentHighestRatedReviews = async (limit = 10): Promise<Review[]> => {
   const result = await pool.query(
-    `SELECT id, business_id, user_id, rating, feedback, created_at, updated_at, customer_name, approval_status
-     FROM reviews
-     WHERE rating = (SELECT MAX(rating) FROM reviews)
-     ORDER BY created_at DESC
-     LIMIT $1`,
+    `
+    SELECT 
+      r.id, 
+      r.business_id, 
+      r.user_id, 
+      r.rating, 
+      r.feedback, 
+      r.created_at, 
+      r.updated_at, 
+      r.customer_name, 
+      r.approval_status,
+      pb.org_name
+    FROM reviews r
+    LEFT JOIN profiles_business pb ON r.business_id = pb.id
+    WHERE r.rating = (SELECT MAX(rating) FROM reviews)
+    ORDER BY r.created_at DESC
+    LIMIT $1
+    `,
     [limit]
   );
 
   return result.rows;
 };
-
 /**
  * Get all reviews in the system, including the user's location.
  * @returns A list of all reviews
