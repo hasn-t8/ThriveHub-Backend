@@ -38,7 +38,7 @@ router.post("/upload-profile-image", verifyToken, upload.single("profileImage"),
     }
 
     const userId = req.user?.id;
-    console.log('userId userId :::::::::', userId);
+    // console.log('userId userId :::::::::', userId);
     
 
     if (!userId) {

@@ -35,6 +35,7 @@ router.post(
 
     try {
       const user = await findUserByEmail(email);
+
       if (!user) {
         console.debug(`Login failed: No user found for email ${email}`);
         res.status(401).json({ error: "Unauthorized: Invalid credentials" });
@@ -55,7 +56,12 @@ router.post(
       }
 
       // Fetch all business profiles for the user
-      const businessProfiles = await getBusinessProfilesByUserId(user.id);
+      let businessProfiles;
+      if (!user.userTypes.includes("admin")) {
+        businessProfiles = await getBusinessProfilesByUserId(user.id);
+      } else {
+        businessProfiles = [];
+      }
 
       const payload = {
         id: user.id,
@@ -69,7 +75,7 @@ router.post(
 
       const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
-      console.log("Login successful", { token, businessProfiles });
+      // console.log("Login successful", { token, businessProfiles });
 
       // Respond with token and user details
       res.status(200).json({

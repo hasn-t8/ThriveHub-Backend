@@ -84,7 +84,7 @@ router.put(
 
     const keyPointId = parseInt(req.params.id, 10);
     if (isNaN(keyPointId)) {
-      console.log('--- keyPointId', keyPointId);
+      // console.log('--- keyPointId', keyPointId);
       
       res.status(400).json({ error: "Invalid key point ID" });
       return;
@@ -256,7 +256,7 @@ router.delete(
 
     const resultOwnerVerify = await verifyBusinessKeyPointOwner(userId, keyPointId);
 
-    console.log('resultOwnerVerify', resultOwnerVerify);
+    // console.log('resultOwnerVerify', resultOwnerVerify);
     
     // Check if the user type is allowed
     if (userType !== "admin" && !resultOwnerVerify) {
@@ -284,7 +284,7 @@ router.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     const keyPointNameId = parseInt(req.params.id, 10);
 
-    console.log("keyPointNameId", keyPointNameId);
+    // console.log("keyPointNameId", keyPointNameId);
 
     if (isNaN(keyPointNameId)) {
       res.status(400).json({ error: "Invalid Key Point Name ID" });

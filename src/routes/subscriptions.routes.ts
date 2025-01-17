@@ -236,11 +236,11 @@ router.post(
       return;
     }
 
-    console.log("req.body.session_id", req.body);
+    // console.log("req.body.session_id", req.body);
 
     try {
       const session = await stripe.checkout.sessions.retrieve(req.body.session_id);
-      console.log("session", session);
+      // console.log("session", session);
       if (!session) {
         res.status(404).json({ error: "Session not found" });
         return;
@@ -249,7 +249,7 @@ router.post(
         subscription = await stripe.subscriptions.retrieve(session.subscription);
       }
       if (subscription?.items.data[0].plan.product) {
-        console.log("subscription", subscription);
+        // console.log("subscription", subscription);
         const productId = subscription?.items.data[0].plan.product;
         if (typeof productId === "string") {
           product = await stripe.products.retrieve(productId);
