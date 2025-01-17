@@ -30,7 +30,7 @@ export const authorize = (requiredAction: string, requiredResource: string) => {
         return;
       }
 
-      next();
+      return next();
     } catch (error) {
       console.log("Authorization error:", error);
       console.error("Authorization error:", error);
