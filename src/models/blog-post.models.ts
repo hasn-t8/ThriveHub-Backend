@@ -86,6 +86,28 @@ export const getBlogPostsByCategory = async (categoryId: number): Promise<BlogPo
 };
 
 /**
+ * Get a blog post by ID
+ */
+export const getBlogPostById = async (blogPostId: number): Promise<BlogPost | null> => {
+  const result = await pool.query(
+    `SELECT 
+    bp.*, 
+    c.name AS category_name
+    FROM blog_posts bp
+    LEFT JOIN categories c ON bp.category_id = c.id
+    WHERE bp.id = $1`,
+    [blogPostId]
+  );
+
+  // If no rows are returned, return null
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return result.rows[0];
+};
+
+/**
  * Update a blog post
  */
 export const updateBlogPost = async (
