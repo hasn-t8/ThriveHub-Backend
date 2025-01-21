@@ -62,7 +62,7 @@ export const getPersonalProfileByUserId = async (userId: number) => {
 
   const result = await pool.query(query, [userId]);
 
-  if (result.rows.length === 0 || !result.rows[0].profile_id) {
+  if (result.rows.length === 0) {
     return null;
   }
 
