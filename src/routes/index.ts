@@ -25,6 +25,7 @@ import blogPosts from './blog/blog-posts.routes';
 import blogCategories from './blog/categories.routes';
 import ReviewReply from './profiles/reply-reviews.routes';
 import subsciptions from './subscriptions.routes';
+import bookmarks from './bookmarks.routes';
 
 
 
@@ -54,6 +55,7 @@ router.use(businessKeyPoints);
 router.use(reviews);
 
 router.use(likes);
+router.use(bookmarks);
 
 router.use(blogPosts);
 router.use(blogCategories);
