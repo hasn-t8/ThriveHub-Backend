@@ -65,7 +65,7 @@ router.post(
 
       const policies = await getPoliciesForUser(userId);
 
-      console.log("User policies:", policies); // Debugging
+      // console.log("User policies:", policies); // Debugging
 
       const isAuthorized = policies.some((policy) => {
         const actionAllowed = policy.actions.includes("*") || policy.actions.includes("*");

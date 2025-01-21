@@ -102,14 +102,14 @@ export const verifyAdmin = async (
     );
 
     if (userTypeResult.rowCount === 0) {
-      next();
+      return next();
     }
 
     if (req.user) {
       req.user.type = userTypeAdmin.rows[0].type;
     }
     // req.user = { id, email, tokenVersion, type: userTypeResult.rows[0].type };
-    next();
+    return next();
   } catch (error) {
     console.log("verifyToken: ", error);
 

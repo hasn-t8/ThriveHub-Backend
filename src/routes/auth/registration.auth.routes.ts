@@ -88,7 +88,7 @@ console.log(verificationCode);
     
 
     const userDetails = await findUserByEmail(email);
-    console.log('userDetails:', userDetails);
+    // console.log('userDetails:', userDetails);
     if(!userDetails) {
       res.status(500).json({ error: "User registration failed. Internal Server Error" });
       return;
@@ -106,6 +106,8 @@ console.log(verificationCode);
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
 
     // console.log('Login successful', token);
+    
+    // console.log('verificationCode:', verificationCode);
     
     
     // Send activation email
