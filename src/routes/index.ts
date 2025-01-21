@@ -26,7 +26,7 @@ import blogCategories from './blog/categories.routes';
 import ReviewReply from './profiles/reply-reviews.routes';
 import subsciptions from './subscriptions.routes';
 import bookmarks from './bookmarks.routes';
-
+import share from './share.routes';
 
 
 router.use(authLoginRoute);
@@ -56,6 +56,7 @@ router.use(reviews);
 
 router.use(likes);
 router.use(bookmarks);
+router.use(share);
 
 router.use(blogPosts);
 router.use(blogCategories);
