@@ -25,6 +25,7 @@ import blogPosts from './blog/blog-posts.routes';
 import blogCategories from './blog/categories.routes';
 import ReviewReply from './profiles/reply-reviews.routes';
 import subsciptions from './subscriptions.routes';
+import contactUs from './contact_us';
 
 
 
@@ -59,6 +60,7 @@ router.use(blogPosts);
 router.use(blogCategories);
 router.use(ReviewReply);
 router.use(subsciptions);
+router.use(contactUs);
 
 
 
