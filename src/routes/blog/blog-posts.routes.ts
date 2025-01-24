@@ -6,6 +6,7 @@ import {
   updateBlogPost,
   deleteBlogPost,
   getBlogByAuthorId,
+  getBlogPostById,
 } from "../../models/blog-post.models";
 import multer from "multer";
 
@@ -22,13 +23,25 @@ router.get("/posts", async (req: Request, res: Response): Promise<void> => {
 
   try {
     if (category_id) {
-      
       const posts = await getBlogPostsByCategory(Number(category_id));
       res.json(posts);
     } else {
       const posts = await getAllBlogPosts();
       res.json(posts);
     }
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all posts or filter by category
+router.get("/posts/:id", async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  try {
+    const posts = await getBlogPostById(Number(id));
+    res.json(posts);
   } catch (error) {
     const err = error as Error;
     res.status(500).json({ error: err.message });
@@ -188,6 +201,67 @@ export default router;
  * tags:
  *   name: Blog Posts
  *   description: API endpoints for managing blog posts
+ */
+
+/**
+ * Get a blog post by ID
+ *
+ * @swagger
+ * /posts/{id}:
+ *   get:
+ *     summary: Get a blog post by ID
+ *     tags: [Blog Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the blog post to retrieve
+ *     responses:
+ *       200:
+ *         description: The blog post data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: The ID of the blog post
+ *                 author_id:
+ *                   type: integer
+ *                   description: The ID of the post's author
+ *                 category_id:
+ *                   type: integer
+ *                   description: The category ID of the post
+ *                 title:
+ *                   type: string
+ *                   description: The title of the blog post
+ *                 content:
+ *                   type: string
+ *                   description: The content of the blog post
+ *                 is_published:
+ *                   type: boolean
+ *                   description: Whether the post is published
+ *                 image_cover:
+ *                   type: string
+ *                   description: URL of the cover image
+ *                 image_thumbnail:
+ *                   type: string
+ *                   description: URL of the thumbnail image
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: The creation date of the post
+ *                 updated_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: The last update date of the post
+ *       404:
+ *         description: Blog post not found
+ *       500:
+ *         description: Internal server error
  */
 
 /**
