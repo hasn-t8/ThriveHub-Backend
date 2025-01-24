@@ -269,3 +269,32 @@ export const verifyBusinessOwner = async (userId: number, businessProfileId: num
   }
   return true;
 };
+
+
+export const approveBusinessProfile = async (businessProfileId: number) => {
+  const query = `
+    UPDATE profiles_business
+    SET is_approved = true
+    WHERE id = $1
+    RETURNING *
+  `;
+
+  const result = await pool.query(query, [businessProfileId]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+};
+
+
+export const getBusinessProfilesByApprovalStatus = async (isApproved: boolean) => {
+  const query = `
+    SELECT 
+      p.id AS profile_id,
+      pb.id AS business_profile_id,
+      pb.*
+    FROM profiles p
+    INNER JOIN profiles_business pb ON p.id = pb.profile_id
+    WHERE p.profile_type = 'business' AND pb.is_approved = $1
+  `;
+
+  const result = await pool.query(query, [isApproved]);
+  return result.rows;
+};
