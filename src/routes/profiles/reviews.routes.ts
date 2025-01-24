@@ -335,7 +335,7 @@ router.delete(
 
 // Get all reviews by the authenticated user
 router.get(
-  "/reviews",
+  "/myreviews",
   verifyToken,
   async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const userId = req.user?.id;
