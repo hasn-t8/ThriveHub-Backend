@@ -11,7 +11,7 @@ import { webHookHandler } from "./webhook_handler";
 
 const app: Application = express();
 
-const endpointSecret = "whsec_8ba5198a77107a175a6378a939be8dce21ca5d6d7563244337d67170aaba3a63";
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 import stripe from "./config/stripe";
 
 app.post(
