@@ -1,13 +1,15 @@
 import { Router, Response } from "express";
 import { check, validationResult } from "express-validator";
-import { verifyToken } from "../../middleware/authenticate";
+import { verifyToken,verifyAdmin } from "../../middleware/authenticate";
 import { AuthenticatedRequest } from "../../types/authenticated-request";
 import {
   getBusinessProfilesByUserId,
   createBusinessProfile,
   updateBusinessProfile,
-  deleteBusinessProfile,
+  deleteBusinessProfile, 
   getBusinessProfileByBusinessProfileId,
+  approveBusinessProfile,
+  getBusinessProfilesByApprovalStatus,
 } from "../../models/business-profile.models";
 
 const router = Router();
@@ -168,6 +170,68 @@ router.delete(
         return;
       }
       console.error("Error deleting business profile:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Get business profiles by approval status
+router.get(
+  "/business-profiles/approval-status/:status",
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { status } = req.params;
+
+    // Validate the approval status
+    if (status !== "true" && status !== "false") {
+      res.status(400).json({ error: "Invalid status value. Use 'true' or 'false'." });
+      return;
+    }
+
+    try {
+      const isApproved = status === "true";
+      const profiles = await getBusinessProfilesByApprovalStatus(isApproved);
+
+      if (!profiles || profiles.length === 0) {
+        res.status(404).json({ error: "No business profiles found for the given approval status." });
+        return;
+      }
+
+      res.status(200).json({ message: "Business profiles fetched successfully", profiles });
+    } catch (error) {
+      console.error("Error fetching business profiles by approval status:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
+
+// Approve a business profile
+router.patch(
+  "/business-profiles/:profileId/approve",
+  verifyToken,
+  verifyAdmin, // Ensure only admins can access this route
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const profileId = parseInt(req.params.profileId, 10);
+
+    if (isNaN(profileId)) {
+      res.status(400).json({ error: "Invalid Profile ID" });
+      return;
+    }
+
+    try {
+      // Delegate the logic to the model function
+      const approvedProfile = await approveBusinessProfile(profileId);
+
+      if (!approvedProfile) {
+        res.status(404).json({ error: "Business profile not found" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Business profile approved successfully",
+        profile: approvedProfile,
+      });
+    } catch (error) {
+      console.error("Error approving business profile:", error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   }
