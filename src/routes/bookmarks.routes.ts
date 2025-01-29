@@ -5,6 +5,7 @@ import {
   isBookmarked,
   addBookmark,
   removeBookmark,
+  getAllBookmarkedBusinessIds
 } from "../models/bookmarks.models";
 
 const router = Router();
@@ -84,4 +85,29 @@ router.get(
   }
 );
 
+/**
+ * Get all bookmarked business IDs for a specific user.
+ */
+router.get(
+  "/user/bookmarked-businesses",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    if (!req.user?.id) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const userId = req.user.id;
+
+      // Fetch all bookmarked business IDs for the user
+      const bookmarkedBusinessIds = await getAllBookmarkedBusinessIds(userId);
+
+      res.status(200).json({ bookmarkedBusinessIds });
+    } catch (error) {
+      console.error("Error fetching bookmarked businesses:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 export default router;

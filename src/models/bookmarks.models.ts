@@ -88,3 +88,32 @@ export const removeBookmark = async (
     throw error;
   }
 };
+
+/**
+ * Get all bookmarked business IDs for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A list of business IDs bookmarked by the user.
+ */
+export const getAllBookmarkedBusinessIds = async (
+  userId: number
+): Promise<number[]> => {
+  const client = await pool.connect();
+
+  try {
+    const query = `
+      SELECT business_id
+      FROM bookmarks
+      WHERE user_id = $1
+    `;
+
+    const result = await client.query(query, [userId]);
+
+    // Extract the business IDs from the rows
+    return result.rows.map((row) => row.business_id);
+  } catch (error) {
+    console.error("Error fetching bookmarked business IDs:", error);
+    throw new Error("Database query failed");
+  } finally {
+    client.release();
+  }
+};
