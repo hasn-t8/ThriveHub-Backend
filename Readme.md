@@ -1,4 +1,4 @@
-# Development  
+cc# Development  
 1. Run Postgres DB with `docker-compose up -d`   
 2. ` npm install `
 3. `npm run migrate:up`
