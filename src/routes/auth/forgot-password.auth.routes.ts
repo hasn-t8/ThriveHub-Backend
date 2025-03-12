@@ -38,7 +38,7 @@ router.post(
 
       // Save reset token in the database
       await saveResetToken(user.id, resetToken);
-
+      console.log(resetToken);
       if (IS_DEVLOPMENT) {
         res.status(200).json({
           message: `Password reset token sent successfully. ${resetToken}`,
@@ -48,14 +48,14 @@ router.post(
           full_name: user.full_name,
           recover_pass_token: resetToken,
         };
-
+console.log(resetToken);
         // Send activation email
-        await sendMail(
-          email,
-          "Recover Forgot Password",
-          "Recover Password",
-          emailVariables
-        );
+        // await sendMail(
+        //   email,
+        //   "Recover Forgot Password",
+        //   "Recover Password",
+        //   emailVariables
+        // );
         res.status(200).json({ message: "Password reset token sent successfully" });
       }
     } catch (error) {

@@ -84,7 +84,7 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
       full_name: full_name,
       email_verification_code: verificationCode,
     };
-
+console.log(verificationCode);
     
 
     const userDetails = await findUserByEmail(email);
@@ -111,12 +111,12 @@ router.post("/auth/register", validateRegister, async (req: Request, res: Respon
     
     
     // Send activation email
-    await sendMail(
-      email,
-      "Welcome to ThriveHub",
-      "welcome email",
-      emailVariables
-    );
+    // await sendMail(
+    //   email,
+    //   "Welcome to ThriveHub",
+    //   "welcome email",
+    //   emailVariables
+    // );
     res.status(201).json({ message: `User registered successfully ${verificationCode}`, user: userDeatils, businessProfile, token });
     return;
   } catch (error) {
